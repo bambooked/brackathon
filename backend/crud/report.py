@@ -180,6 +180,45 @@ async def update_report(
     return _report_to_dict(full)
 
 
+async def delete_reaction(report_id: int, user_id: int, reaction_type: str) -> dict:
+    """リアクションを取り消し（付与したポイントを双方から減算）"""
+    reaction = await Reaction.get_or_none(
+        daily_report_id=report_id,
+        user_id=user_id,
+        type=reaction_type,
+    )
+    if reaction is None:
+        raise ValueError("リアクションが見つかりません")
+
+    report = await DailyReport.get(id=report_id)
+
+    async with in_transaction():
+        _, reactor_account = await _apply_points(
+            user_id=user_id,
+            amount=-2,
+            transaction_type="reaction_cancelled",
+            source_type="reaction",
+            source_id=reaction.id,
+            description="リアクション取り消し",
+        )
+        await _apply_points(
+            user_id=report.user_id,
+            amount=-10,
+            transaction_type="reaction_cancelled",
+            source_type="reaction",
+            source_id=reaction.id,
+            description="リアクション取り消しによるポイント減算",
+        )
+        await reaction.delete()
+
+    return {
+        "report_id": report_id,
+        "reaction_type": reaction_type,
+        "my_new_balance": reactor_account.balance,
+        "message": f"リアクション {reaction_type} を取り消しました",
+    }
+
+
 async def create_reaction(
     report_id: int, user_id: int, reaction_type: str
 ) -> dict:

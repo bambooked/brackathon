@@ -5,12 +5,14 @@
 // ============================================================
 import { useEffect, useState } from 'react'
 
-import { addReaction, createReport, fetchReports } from '@/api/reports'
+import { addReaction, createReport, fetchReports, removeReaction } from '@/api/reports'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Report } from '@/types'
 
 const REACTION_EMOJIS = ['⚡', '👍', '🔥', '🙏']
 
 export default function ReportsPage() {
+  const { user } = useAuth()
   const [reports, setReports] = useState<Report[]>([])
   const [draft, setDraft] = useState('')
 
@@ -26,13 +28,24 @@ export default function ReportsPage() {
     setDraft('')
   }
 
-  async function handleReaction(reportId: string, emoji: string) {
-    const reaction = await addReaction(reportId, emoji)
-    setReports((prev) =>
-      prev.map((r) =>
-        r.id === reportId ? { ...r, reactions: [...r.reactions, reaction] } : r,
-      ),
-    )
+  async function handleReaction(reportId: string, emoji: string, alreadyReacted: boolean) {
+    if (alreadyReacted) {
+      await removeReaction(reportId, emoji)
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId
+            ? { ...r, reactions: r.reactions.filter((rx) => !(rx.userId === user?.id && rx.emoji === emoji)) }
+            : r,
+        ),
+      )
+    } else {
+      const reaction = await addReaction(reportId, emoji)
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId ? { ...r, reactions: [...r.reactions, reaction] } : r,
+        ),
+      )
+    }
   }
 
   return (
@@ -59,15 +72,24 @@ export default function ReportsPage() {
             <p className="font-bold">{report.authorName}</p>
             <p className="whitespace-pre-wrap">{report.content}</p>
             <div className="mt-2 flex gap-2">
-              {REACTION_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => handleReaction(report.id, emoji)}
-                  className="rounded-full border px-2 py-1 text-sm hover:bg-bt-cream"
-                >
-                  {emoji}
-                </button>
-              ))}
+              {REACTION_EMOJIS.map((emoji) => {
+                const alreadyReacted = user
+                  ? report.reactions.some((rx) => rx.userId === user.id && rx.emoji === emoji)
+                  : false
+                return (
+                  <button
+                    key={emoji}
+                    onClick={() => handleReaction(report.id, emoji, alreadyReacted)}
+                    className={`rounded-full border px-2 py-1 text-sm ${
+                      alreadyReacted
+                        ? 'bg-bt-gold font-bold'
+                        : 'hover:bg-bt-cream'
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                )
+              })}
               <span className="ml-2 text-sm text-bt-dark/60">
                 {report.reactions.length} 件
               </span>

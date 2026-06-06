@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 import crud.report as report_crud
 from models import DailyReport as DailyReportModel
@@ -6,6 +6,7 @@ from schemas.report import (
     AllReportsResponse,
     CreateReportRequest,
     CreateReportResponse,
+    DeleteReactionResponse,
     GetReportsResponse,
     Reaction,
     ReactToReportRequest,
@@ -178,3 +179,24 @@ async def react_to_report(
         my_new_balance=result["my_new_balance"],
         message=result["message"],
     )
+
+
+@router.delete("/{report_id}/react", response_model=DeleteReactionResponse)
+async def delete_reaction(
+    report_id: int,
+    type: str = Query(..., description="取り消すリアクションの種別"),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    日報のリアクションを取り消し - reactions から削除し、付与済みポイントを双方から減算
+    """
+    try:
+        result = await report_crud.delete_reaction(
+            report_id=report_id,
+            user_id=current_user.user_id,
+            reaction_type=type,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    return DeleteReactionResponse(**result)
