@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 import crud.report as report_crud
+from models import DailyReport as DailyReportModel
 from schemas.report import (
     AllReportsResponse,
     CreateReportRequest,
     CreateReportResponse,
-    DailyReport,
     GetReportsResponse,
     Reaction,
     ReactToReportRequest,
@@ -33,7 +33,19 @@ async def create_report(
         body=request.body,
     )
 
-    return CreateReportResponse(**result)
+    return CreateReportResponse(
+        id=result["id"],
+        user_id=result["user_id"],
+        user=UserSummary(**result["user"]),
+        report_date=result["report_date"],
+        title=result["title"],
+        body=result["body"],
+        reactions=[Reaction(**r) for r in result["reactions"]],
+        created_at=result["created_at"],
+        updated_at=result["updated_at"],
+        point_transaction_id=result.get("point_transaction_id"),
+        points_awarded=result.get("points_awarded", 0),
+    )
 
 
 @router.get("/all", response_model=AllReportsResponse)
@@ -107,23 +119,38 @@ async def get_reports(
     )
 
 
-@router.patch("/{report_id}", response_model=DailyReport)
+@router.patch("/{report_id}", response_model=ReportWithDetails)
 async def update_report(
     report_id: int,
     request: UpdateReportRequest,
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
-    日報を更新 - daily_reports の内容を更新
-    当日分の日報のみ更新可能
+    日報を更新 - 自分の日報のみ更新可能
     """
+    report = await DailyReportModel.get_or_none(id=report_id)
+    if report is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="日報が見つかりません")
+    if report.user_id != current_user.user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="他のユーザーの日報は更新できません")
+
     result = await report_crud.update_report(
         report_id=report_id,
         title=request.title,
         body=request.body,
     )
 
-    return DailyReport(**result)
+    return ReportWithDetails(
+        id=result["id"],
+        user_id=result["user_id"],
+        user=UserSummary(**result["user"]),
+        report_date=result["report_date"],
+        title=result["title"],
+        body=result["body"],
+        reactions=[Reaction(**r) for r in result["reactions"]],
+        created_at=result["created_at"],
+        updated_at=result["updated_at"],
+    )
 
 
 @router.post("/{report_id}/react", response_model=ReactToReportResponse)
@@ -135,11 +162,14 @@ async def react_to_report(
     """
     日報にリアクション - reactions に保存し、双方に point_transactions を作成
     """
-    result = await report_crud.create_reaction(
-        report_id=report_id,
-        user_id=current_user.user_id,
-        reaction_type=request.type,
-    )
+    try:
+        result = await report_crud.create_reaction(
+            report_id=report_id,
+            user_id=current_user.user_id,
+            reaction_type=request.type,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
     return ReactToReportResponse(
         reaction=Reaction(**result["reaction"]),

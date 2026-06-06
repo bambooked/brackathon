@@ -49,16 +49,19 @@ class UpdateReportRequest(BaseModel):
 
 
 class CreateReportResponse(BaseModel):
-    """日報作成後のレスポンス（daily_reports + point_transaction）"""
+    """日報作成後のレスポンス（ReportWithDetails + point情報）"""
 
     id: int
     user_id: int
+    user: UserSummary
     report_date: str
     title: str | None = None
     body: str
+    reactions: list[Reaction]
     created_at: str
-    point_transaction_id: int | None = None  # AI判定でポイントが付与された場合
-    points_awarded: int
+    updated_at: str
+    point_transaction_id: int | None = None
+    points_awarded: int = 0
 
 
 class ReportWithDetails(BaseModel):

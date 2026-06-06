@@ -20,9 +20,16 @@ import MyPage from './pages/MyPage/MyPage'
 import PostPage from './pages/PostPage/PostPage'
 import ShopPage from './pages/ShopPage/ShopPage'
 
-/** 未ログインなら /login へリダイレクトするガード */
+/** 未ログインなら /login へリダイレクトするガード（復元中はスピナーを表示） */
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bt-dark">
+        <span className="text-bt-cream text-xl">⚡</span>
+      </div>
+    )
+  }
   if (!isAuthenticated) return <Navigate to="/login" replace />
   return <>{children}</>
 }

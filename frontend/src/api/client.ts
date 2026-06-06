@@ -34,7 +34,12 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   })
   if (!res.ok) {
-    throw new ApiError(res.status, `API error: ${res.status}`)
+    let detail = `API error: ${res.status}`
+    try {
+      const body = await res.json()
+      if (body?.detail) detail = body.detail
+    } catch { /* ignore */ }
+    throw new ApiError(res.status, detail)
   }
   return res.json() as Promise<T>
 }

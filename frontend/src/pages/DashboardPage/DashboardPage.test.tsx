@@ -13,6 +13,7 @@ vi.mock('@/contexts/AuthContext', async (importOriginal) => {
     useAuth: () => ({
       user: { id: 'u-001', name: 'テスト太郎', email: 'a@example.com', teamId: 't-1' },
       isAuthenticated: true,
+      isLoading: false,
       setAuth: vi.fn(),
       clearAuth: vi.fn(),
     }),
@@ -37,8 +38,8 @@ describe('DashboardPage', () => {
   })
 
   it('チームポイントから BTメーターの割合を表示する', async () => {
-    // teamPoints=80, 閾値=15*6=90 → 89%
+    // teamPoints=80, 閾値=150*6=900 → Math.round(80/900*100)=9%
     render(<DashboardPage />)
-    expect(await screen.findByText('89%')).toBeInTheDocument()
+    expect(await screen.findByText('9%')).toBeInTheDocument()
   })
 })

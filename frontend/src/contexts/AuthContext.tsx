@@ -1,12 +1,14 @@
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { clearToken, getToken, setToken } from '@/api/client'
+import { getCurrentUser } from '@/api/auth'
 import type { AuthResult, User } from '@/types'
 
 interface AuthContextValue {
   user: User | null
   token: string | null
   isAuthenticated: boolean
+  isLoading: boolean
   setAuth: (result: AuthResult) => void
   clearAuth: () => void
 }
@@ -16,6 +18,24 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setTokenState] = useState<string | null>(() => getToken())
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // リロード時にトークンが残っていればAPIからユーザーを復元する
+  useEffect(() => {
+    const storedToken = getToken()
+    if (!storedToken) {
+      setIsLoading(false)
+      return
+    }
+    getCurrentUser()
+      .then((u) => setUser(u))
+      .catch(() => {
+        // トークンが無効なら削除してログアウト状態にする
+        clearToken()
+        setTokenState(null)
+      })
+      .finally(() => setIsLoading(false))
+  }, [])
 
   const setAuth = useCallback((result: AuthResult) => {
     setToken(result.token)
@@ -30,8 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, isAuthenticated: user !== null, setAuth, clearAuth }),
-    [user, token, setAuth, clearAuth],
+    () => ({ user, token, isAuthenticated: user !== null, isLoading, setAuth, clearAuth }),
+    [user, token, isLoading, setAuth, clearAuth],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

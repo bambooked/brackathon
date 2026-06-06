@@ -24,8 +24,8 @@ beforeEach(() => {
 describe('EventsPage', () => {
   it('各イベントの消費ポイントを表示する', () => {
     render(<EventsPage />)
-    expect(screen.getByText('消費 5 PT')).toBeInTheDocument() // BTtime
-    expect(screen.getByText('消費 15 PT')).toBeInTheDocument() // BTfever
+    expect(screen.getByText('消費 50 PT')).toBeInTheDocument() // BTtime
+    expect(screen.getByText('消費 150 PT')).toBeInTheDocument() // BTfever
   })
 
   it('BTtime を開始できる', async () => {

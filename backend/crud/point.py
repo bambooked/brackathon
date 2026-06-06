@@ -75,8 +75,17 @@ async def _apply_points(
 
 async def present_bt(sender_id: int, receiver_id: int, team_name: str) -> dict:
     """BT手渡し処理"""
+    if sender_id == receiver_id:
+        raise ValueError("自分自身にBTを送ることはできません")
     await _ensure_team_member(sender_id, team_name)
     await _ensure_team_member(receiver_id, team_name)
+
+    account = await _get_or_create_account(sender_id)
+    if account.balance < BT_PRESENT_COST:
+        raise ValueError(
+            f"ポイントが不足しています（必要: {BT_PRESENT_COST}PT、現在: {account.balance}PT）"
+        )
+
     transaction, account = await _apply_points(
         user_id=sender_id,
         amount=-BT_PRESENT_COST,
@@ -113,6 +122,12 @@ async def trigger_event(user_id: int, event_type: str) -> dict:
     else:
         cost = BT_FEVER_COST
         message = "BTfeverを発動しました！チーム全体がお祭りモードになりました"
+
+    account = await _get_or_create_account(user_id)
+    if account.balance < cost:
+        raise ValueError(
+            f"ポイントが不足しています（必要: {cost}PT、現在: {account.balance}PT）"
+        )
 
     transaction, account = await _apply_points(
         user_id=user_id,

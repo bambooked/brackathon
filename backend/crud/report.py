@@ -135,13 +135,12 @@ async def create_report(
                 description="日報のAI評価でポイント獲得",
             )
 
+    # user・reactions を含む完全な情報を返す
+    full = await DailyReport.get(id=report.id).select_related("user").prefetch_related("reactions")
+    report_data = _report_to_dict(full)
+
     return {
-        "id": report.id,
-        "user_id": report.user_id,
-        "report_date": report.report_date.isoformat(),
-        "title": report.title,
-        "body": report.body,
-        "created_at": report.created_at.isoformat(),
+        **report_data,
         "point_transaction_id": transaction.id if transaction is not None else None,
         "points_awarded": ai_points if created else 0,
     }
@@ -167,7 +166,7 @@ async def update_report(
     report_id: int, title: str | None = None, body: str | None = None
 ) -> dict:
     """日報を更新"""
-    report = await DailyReport.get(id=report_id).select_related("user")
+    report = await DailyReport.get(id=report_id)
 
     if title is not None:
         report.title = title
@@ -175,17 +174,10 @@ async def update_report(
         report.body = body
 
     await report.save()
-    await report.fetch_related("reactions")
 
-    return {
-        "id": report.id,
-        "user_id": report.user_id,
-        "report_date": report.report_date.isoformat(),
-        "title": report.title,
-        "body": report.body,
-        "created_at": report.created_at.isoformat(),
-        "updated_at": report.updated_at.isoformat(),
-    }
+    # user・reactions を含む完全な情報を返す
+    full = await DailyReport.get(id=report_id).select_related("user").prefetch_related("reactions")
+    return _report_to_dict(full)
 
 
 async def create_reaction(
@@ -193,6 +185,10 @@ async def create_reaction(
 ) -> dict:
     """リアクションを作成"""
     report = await DailyReport.get(id=report_id).select_related("user")
+
+    if report.user_id == user_id:
+        raise ValueError("自分の日報にはリアクションできません")
+
     await _ensure_user(user_id)
 
     async with in_transaction():

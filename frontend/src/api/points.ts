@@ -2,6 +2,13 @@ import type { BTEvent, EventType, PointTransaction, Present } from '@/types'
 
 import { request } from './client'
 
+export interface ActiveEvent {
+  active: boolean
+  event_type: 'time' | 'fever' | null
+  started_at: string | null
+  ends_at: string | null
+}
+
 // バックエンドのレスポンス型
 interface BackendTransaction {
   id: number
@@ -53,6 +60,10 @@ export async function fetchTeamPoints(_teamId: string): Promise<number> {
     '/points/users',
   )
   return res.users.reduce((sum, u) => sum + u.balance, 0)
+}
+
+export async function fetchActiveEvent(): Promise<ActiveEvent> {
+  return request<ActiveEvent>('/points/event')
 }
 
 export async function startEvent(type: EventType): Promise<BTEvent> {
