@@ -1,0 +1,46 @@
+# Ruff設定ファイル
+# https://docs.astral.sh/ruff/configuration/
+
+# 1行の最大文字数
+line-length = 100
+
+# Python バージョン
+target-version = "py311"
+
+# チェック対象から除外するディレクトリ
+exclude = [
+    ".git",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "venv",
+]
+
+[lint]
+# 有効にするルールセット
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+
+# 無視するルール
+ignore = [
+    "E501",  # line-too-long (line-lengthで管理)
+]
+
+# ルールごとの設定
+[lint.per-file-ignores]
+# テストファイルでは一部ルールを無視
+"tests/**/*.py" = ["F401", "F811"]
+
+[format]
+# フォーマット設定
+quote-style = "double"
+indent-style = "space"
