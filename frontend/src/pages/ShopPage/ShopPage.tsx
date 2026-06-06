@@ -93,33 +93,33 @@ export default function ShopPage() {
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">BTショップ</h1>
-          <p className="text-sm text-bt-dark/50 mt-0.5">ポイントを使ってイベントを発動しよう</p>
+          <h1 className="text-2xl font-bold text-bt-cream">BTショップ</h1>
+          <p className="text-sm text-bt-gray-dark mt-0.5">ポイントを使ってイベントを発動しよう</p>
         </div>
-        <div className="rounded-xl bg-bt-gold/20 px-4 py-2 text-center">
-          <p className="text-xs text-bt-dark/50">所持PT</p>
-          <p className="text-2xl font-bold text-bt-gold">{myPoints}</p>
+        <div className="rounded-xl bg-bt-card border-2 border-bt-thunder px-4 py-2 text-center shadow-lg shadow-bt-thunder/30 animate-pulse-thunder">
+          <p className="text-xs text-bt-gray-dark">所持PT</p>
+          <p className="text-2xl font-bold text-bt-thunder">{myPoints}</p>
         </div>
       </div>
 
       {/* 発動中イベント */}
       {activeEvent && (
-        <div className="rounded-xl bg-bt-gold/20 border border-bt-gold p-4 flex items-center gap-3">
+        <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-4 flex items-center gap-3 shadow-lg shadow-bt-thunder/30 animate-border-flash">
           <span className="text-3xl">{activeEvent.type === 'bt_time' ? '☕' : '⚡'}</span>
           <div>
-            <p className="font-bold">
+            <p className="font-bold text-bt-cream">
               {activeEvent.type === 'bt_time' ? 'BTtime' : 'BTfever'} 開催中！
             </p>
-            <p className="text-sm text-bt-dark/60">チームに通知が送られました 🍫</p>
+            <p className="text-sm text-bt-gray">チームに通知が送られました 🍫</p>
           </div>
         </div>
       )}
 
       {/* プレゼント送信完了 */}
       {presentSent && (
-        <div className="rounded-xl bg-green-50 border border-green-200 p-4 flex items-center gap-3">
+        <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-4 flex items-center gap-3 shadow-lg shadow-bt-thunder/20">
           <span className="text-2xl">🍫</span>
-          <p className="font-medium text-green-700">BTプレゼントを送りました！</p>
+          <p className="font-medium text-bt-thunder">BTプレゼントを送りました！</p>
         </div>
       )}
 
@@ -128,30 +128,33 @@ export default function ShopPage() {
         {SHOP_ITEMS.map((item) => {
           const affordable = myPoints >= item.cost
           const isSelected = selected === item.id
+          const isPresent = item.id === 'present'
           return (
             <button
               key={item.id}
               onClick={() => setSelected(isSelected ? null : (item.id as ShopItemType))}
               disabled={!affordable}
-              className={`w-full rounded-xl p-5 text-left border-2 transition-all
+              className={`w-full rounded-xl p-5 text-left border-2 transition-all transform
                 ${isSelected
-                  ? 'border-bt-gold bg-bt-gold/10'
+                  ? 'border-bt-thunder bg-bt-thunder/20 shadow-xl shadow-bt-thunder/40 scale-105'
                   : affordable
-                  ? 'border-bt-dark/10 bg-white hover:border-bt-gold/50 hover:bg-bt-gold/5'
-                  : 'border-bt-dark/5 bg-white/50 opacity-50 cursor-not-allowed'
+                  ? isPresent
+                    ? 'border-bt-thunder bg-bt-card hover:border-bt-thunder hover:bg-bt-thunder/10 hover:scale-105 shadow-lg shadow-bt-thunder/20'
+                    : 'border-bt-thunder/30 bg-bt-card hover:border-bt-thunder hover:bg-bt-thunder/10 hover:scale-102 shadow-lg shadow-bt-black/50'
+                  : 'border-bt-gray-dark/20 bg-bt-card/50 opacity-50 cursor-not-allowed'
                 }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">{item.icon}</span>
                   <div>
-                    <p className="font-bold">{item.title}</p>
-                    <p className="text-sm text-bt-dark/60 mt-0.5">{item.description}</p>
+                    <p className={`font-bold ${affordable ? 'text-bt-cream' : 'text-bt-gray-dark'}`}>{item.title}</p>
+                    <p className={`text-sm mt-0.5 ${affordable ? 'text-bt-gray' : 'text-bt-gray-dark/60'}`}>{item.description}</p>
                   </div>
                 </div>
                 <span
                   className={`rounded-full px-3 py-1 text-sm font-bold whitespace-nowrap
-                    ${affordable ? 'bg-bt-gold text-bt-dark' : 'bg-bt-dark/10 text-bt-dark/40'}`}
+                    ${affordable ? 'bg-bt-thunder text-bt-black' : 'bg-bt-gray-dark/30 text-bt-gray-dark'}`}
                 >
                   {item.cost} PT
                 </span>
@@ -163,21 +166,21 @@ export default function ShopPage() {
 
       {/* 確認パネル */}
       {selected && selectedItem && (
-        <div className="rounded-xl bg-white border border-bt-gold/30 p-5 space-y-4 shadow-sm">
-          <h2 className="font-bold">
+        <div className="rounded-xl bg-bt-card border-2 border-bt-thunder p-5 space-y-4 shadow-xl shadow-bt-thunder/30">
+          <h2 className="font-bold text-bt-cream">
             {selectedItem.icon} {selectedItem.title} を使う
           </h2>
 
           {selected === 'present' && (
             <>
               <div>
-                <label htmlFor="shop-recipient" className="block text-sm font-medium mb-1">送る相手</label>
+                <label htmlFor="shop-recipient" className="block text-sm font-medium mb-1 text-bt-gray">送る相手</label>
                 <select
                   id="shop-recipient"
                   aria-label="送る相手"
                   value={toUserId}
                   onChange={(e) => setToUserId(e.target.value)}
-                  className="w-full rounded-lg border border-bt-dark/15 p-2.5 text-sm"
+                  className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-2.5 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all"
                 >
                   {members.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -187,41 +190,41 @@ export default function ShopPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="shop-message" className="block text-sm font-medium mb-1">ひとことメッセージ (任意)</label>
+                <label htmlFor="shop-message" className="block text-sm font-medium mb-1 text-bt-gray">ひとことメッセージ (任意)</label>
                 <input
                   id="shop-message"
                   aria-label="メッセージ"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="お疲れ様！"
-                  className="w-full rounded-lg border border-bt-dark/15 p-2.5 text-sm"
+                  className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-2.5 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all placeholder:text-bt-gray-dark"
                 />
               </div>
             </>
           )}
 
-          <div className="flex items-center justify-between text-sm text-bt-dark/60 bg-bt-dark/3 rounded-lg px-3 py-2">
+          <div className="flex items-center justify-between text-sm text-bt-gray bg-bt-black/30 rounded-lg px-3 py-2">
             <span>消費ポイント</span>
-            <span className="font-bold text-bt-dark">
+            <span className="font-bold text-bt-thunder">
               {myPoints} PT → {myPoints - selectedItem.cost} PT
             </span>
           </div>
 
           {errorMsg && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{errorMsg}</p>
+            <p className="text-sm text-red-400 bg-red-900/20 border border-red-400/30 rounded-lg px-3 py-2">{errorMsg}</p>
           )}
 
           <div className="flex gap-3">
             <button
               onClick={() => { setSelected(null); setErrorMsg('') }}
-              className="flex-1 rounded-lg border border-bt-dark/20 py-2.5 text-sm font-medium text-bt-dark/60 hover:bg-bt-dark/5"
+              className="flex-1 rounded-lg border border-bt-thunder/30 py-2.5 text-sm font-medium text-bt-gray hover:bg-bt-card-hover transition-all"
             >
               キャンセル
             </button>
             <button
               onClick={handleConfirm}
               disabled={!canAfford || confirming || (selected === 'present' && !toUserId)}
-              className="flex-1 rounded-lg bg-bt-gold py-2.5 text-sm font-bold text-bt-dark disabled:opacity-40 hover:brightness-105"
+              className="flex-1 rounded-lg bg-bt-thunder py-2.5 text-sm font-bold text-bt-black disabled:opacity-40 hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/40"
             >
               {confirming ? '処理中...' : '確定する ⚡'}
             </button>

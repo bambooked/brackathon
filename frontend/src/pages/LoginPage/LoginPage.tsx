@@ -64,13 +64,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-bt-dark px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-lg bg-bt-cream p-8 shadow-lg text-center">
-        <h1 className="text-2xl font-bold text-bt-dark">⚡ BT ログイン</h1>
-        <p className="text-sm text-bt-dark/60">Googleアカウントでログインしてください</p>
+      <div className="w-full max-w-sm space-y-6 rounded-xl bg-bt-card border-2 border-bt-thunder p-8 shadow-2xl shadow-bt-thunder/20 text-center">
+        <div className="flex justify-center mb-4">
+          <img
+            src="/blackthunder_logo-2.png"
+            alt="Black Thunder"
+            className="h-16 object-contain"
+          />
+        </div>
+        <h1 className="text-2xl font-bold text-bt-thunder">⚡ BT ログイン</h1>
+        <p className="text-sm text-bt-gray">Googleアカウントでログインしてください</p>
         <div className="flex justify-center" ref={buttonRef} aria-label="Googleでログイン" />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400 bg-red-900/20 border border-red-400/30 rounded-lg px-3 py-2">{error}</p>}
         {!GOOGLE_CLIENT_ID && (
-          <p className="text-xs text-amber-700 bg-amber-50 rounded p-2">
+          <p className="text-xs text-amber-400 bg-amber-900/20 border border-amber-400/30 rounded p-2">
             VITE_GOOGLE_CLIENT_ID が未設定です
           </p>
         )}
