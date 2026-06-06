@@ -29,6 +29,7 @@ ADMIN_DATABASE_URL = os.getenv(
 )
 
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+os.environ.setdefault("GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
 
 from main import app  # noqa: E402
 

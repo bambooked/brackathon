@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from google.auth.transport import requests
 from google.oauth2 import id_token
@@ -22,12 +22,18 @@ def verify_google_token(token: str) -> dict | None:
     Returns:
         検証成功時はペイロード（dict）、失敗時はNone
     """
+    if not GOOGLE_CLIENT_ID:
+        return None
+
     try:
         # Google ID Tokenを検証
         idinfo = id_token.verify_oauth2_token(token, requests.Request(), GOOGLE_CLIENT_ID)
 
         # issが正しいか確認
         if idinfo["iss"] not in ["accounts.google.com", "https://accounts.google.com"]:
+            return None
+
+        if idinfo.get("email_verified") is not True:
             return None
 
         return idinfo
@@ -50,9 +56,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(UTC) + timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)

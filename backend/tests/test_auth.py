@@ -10,12 +10,14 @@ def test_google_login(client):
         "email": "test@example.com",
         "name": "テストユーザー",
         "iss": "accounts.google.com",
+        "email_verified": True,
     }
 
-    with patch("utils.auth.id_token.verify_oauth2_token", return_value=mock_id_info):
+    with patch("utils.auth.id_token.verify_oauth2_token", return_value=mock_id_info) as verify:
         response = client.post("/api/v1/auth/google", json={"id_token": "dummy_google_id_token"})
 
     assert response.status_code == 200
+    assert verify.call_args.args[2] == "test-client-id.apps.googleusercontent.com"
     data = response.json()
     assert "access_token" in data
     assert "user" in data
@@ -27,6 +29,23 @@ def test_google_login(client):
     assert data["user"]["role"] in ["member", "admin"]
     assert "created_at" in data["user"]
     assert "updated_at" in data["user"]
+
+
+def test_google_login_unverified_email(client):
+    """POST /api/v1/auth/google - Google側で未確認のメールアドレスは拒否"""
+    mock_id_info = {
+        "email": "test@example.com",
+        "name": "テストユーザー",
+        "iss": "accounts.google.com",
+        "email_verified": False,
+    }
+
+    with patch("utils.auth.id_token.verify_oauth2_token", return_value=mock_id_info):
+        response = client.post("/api/v1/auth/google", json={"id_token": "dummy_google_id_token"})
+
+    assert response.status_code == 401
+    data = response.json()
+    assert data["detail"] == "無効なGoogle ID Tokenです"
 
 
 def test_google_login_invalid_token(client):

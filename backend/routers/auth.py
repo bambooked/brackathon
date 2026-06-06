@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -12,10 +12,11 @@ from schemas.auth import (
     UserListItem,
     UsersListResponse,
 )
-from utils.auth import create_access_token, verify_google_token
+from utils.auth import GOOGLE_CLIENT_ID, create_access_token, verify_google_token
 from utils.dependencies import CurrentUser, get_current_user
 
 router = APIRouter(prefix="/api/v1/auth", tags=["認証"])
+CURRENT_USER_DEP = Depends(get_current_user)
 
 
 @router.post("/google", response_model=GoogleLoginResponse)
@@ -28,6 +29,12 @@ async def google_login(request: GoogleLoginRequest):
     3. JWT Access Tokenを生成して返す
     """
     # Google ID Tokenを検証
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="GOOGLE_CLIENT_IDが設定されていません",
+        )
+
     id_info = verify_google_token(request.id_token)
     if id_info is None:
         raise HTTPException(
@@ -52,7 +59,7 @@ async def google_login(request: GoogleLoginRequest):
     else:
         # 既存ユーザーの更新日時を更新
         user = await user_crud.update_user(
-            email=email, updated_at=datetime.now(timezone.utc).isoformat()
+            email=email, updated_at=datetime.now(UTC).isoformat()
         )
 
     # JWT Access Tokenを生成
@@ -80,7 +87,7 @@ async def google_login(request: GoogleLoginRequest):
 
 
 @router.get("/me", response_model=CurrentUserResponse)
-async def get_current_user_info(current_user: CurrentUser = Depends(get_current_user)):
+async def get_current_user_info(current_user: CurrentUser = CURRENT_USER_DEP):
     """
     現在ログイン中のユーザー情報を取得
 
@@ -91,7 +98,7 @@ async def get_current_user_info(current_user: CurrentUser = Depends(get_current_
 
     if user is None:
         # ストアにない場合は、トークンの情報から最小限のユーザー情報を返す
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         return CurrentUserResponse(
             id=current_user.user_id,
             name=current_user.name,
@@ -114,7 +121,7 @@ async def get_current_user_info(current_user: CurrentUser = Depends(get_current_
 
 
 @router.get("/users", response_model=UsersListResponse)
-async def get_users_list(current_user: CurrentUser = Depends(get_current_user)):
+async def get_users_list(current_user: CurrentUser = CURRENT_USER_DEP):
     """
     ユーザー一覧を取得
     - BT送付先選択で使用
@@ -138,7 +145,7 @@ async def get_users_list(current_user: CurrentUser = Depends(get_current_user)):
 
 @router.patch("/profile", response_model=CurrentUserResponse)
 async def update_profile(
-    request: UpdateProfileRequest, current_user: CurrentUser = Depends(get_current_user)
+    request: UpdateProfileRequest, current_user: CurrentUser = CURRENT_USER_DEP
 ):
     """
     プロフィールを更新
