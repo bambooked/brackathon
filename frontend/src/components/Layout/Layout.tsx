@@ -33,6 +33,9 @@ export default function Layout() {
       <div className="bt-zigzag-decoration bt-zigzag-left" />
       <div className="bt-zigzag-decoration bt-zigzag-right" />
 
+      {/* 中央の雷装飾（包装紙風） */}
+      <div className="bt-thunder-center" />
+
       {/* BTfever時の雷エフェクト背景（将来拡張用） */}
       {activeEvent?.active && activeEvent.event_type === 'fever' && (
         <div className="bt-lightning-bg" />
