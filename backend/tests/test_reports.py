@@ -2,8 +2,19 @@ import pytest
 from fastapi.testclient import TestClient
 
 from main import app
+from utils.auth import create_access_token
 
 client = TestClient(app)
+
+# テスト用のJWTトークンを生成
+test_token = create_access_token(
+    data={
+        "user_id": 1,
+        "email": "test@example.com",
+        "name": "テストユーザー",
+        "team_name": "チームA",
+    }
+)
 
 
 def test_create_report():
@@ -15,7 +26,7 @@ def test_create_report():
             "title": "今日の業務報告",
             "body": "APIの実装を進めました。認証とポイント機能を実装し、テストも完了しました。",
         },
-        headers={"Authorization": "Bearer dummy_jwt_token"},
+        headers={"Authorization": f"Bearer {test_token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -33,7 +44,7 @@ def test_create_report():
 
 def test_get_reports():
     """GET /api/v1/reports - チームの日報一覧を取得"""
-    response = client.get("/api/v1/reports", headers={"Authorization": "Bearer dummy_jwt_token"})
+    response = client.get("/api/v1/reports", headers={"Authorization": f"Bearer {test_token}"})
     assert response.status_code == 200
     data = response.json()
     assert "reports" in data
@@ -60,7 +71,7 @@ def test_react_to_report():
     response = client.post(
         "/api/v1/reports/1/react",
         json={"type": "like"},
-        headers={"Authorization": "Bearer dummy_jwt_token"},
+        headers={"Authorization": f"Bearer {test_token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -92,7 +103,7 @@ def test_get_reports_with_date_filter():
     """GET /api/v1/reports?report_date=2026-06-06 - 日付で絞り込み"""
     response = client.get(
         "/api/v1/reports?report_date=2026-06-06",
-        headers={"Authorization": "Bearer dummy_jwt_token"},
+        headers={"Authorization": f"Bearer {test_token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -105,7 +116,7 @@ def test_get_reports_with_date_filter():
 def test_get_reports_with_user_filter():
     """GET /api/v1/reports?user_id=1 - ユーザーで絞り込み"""
     response = client.get(
-        "/api/v1/reports?user_id=1", headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/reports?user_id=1", headers={"Authorization": f"Bearer {test_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -119,7 +130,7 @@ def test_get_reports_with_multiple_filters():
     """GET /api/v1/reports?report_date=2026-06-06&user_id=1 - 複数条件で絞り込み"""
     response = client.get(
         "/api/v1/reports?report_date=2026-06-06&user_id=1",
-        headers={"Authorization": "Bearer dummy_jwt_token"},
+        headers={"Authorization": f"Bearer {test_token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -133,7 +144,7 @@ def test_get_reports_with_multiple_filters():
 def test_get_all_reports():
     """GET /api/v1/reports/all - 全期間全ユーザーの日報を取得"""
     response = client.get(
-        "/api/v1/reports/all", headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/reports/all", headers={"Authorization": f"Bearer {test_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -169,3 +180,39 @@ def test_get_all_reports():
         assert "reactions" in report
         assert "created_at" in report
         assert "updated_at" in report
+
+
+def test_update_report():
+    """PATCH /api/v1/reports/1 - 日報を更新"""
+    response = client.patch(
+        "/api/v1/reports/1",
+        json={"title": "更新後のタイトル", "body": "更新後の本文"},
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    # daily_reports のスキーマに従った検証
+    assert "id" in data
+    assert data["id"] == 1
+    assert "user_id" in data
+    assert "report_date" in data
+    assert "title" in data
+    assert "body" in data
+    assert "created_at" in data
+    assert "updated_at" in data
+
+
+def test_update_report_partial():
+    """PATCH /api/v1/reports/2 - 日報を部分更新（titleのみ）"""
+    response = client.patch(
+        "/api/v1/reports/2",
+        json={"title": "タイトルだけ更新"},
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "id" in data
+    assert "title" in data
+    assert "body" in data

@@ -2,8 +2,19 @@ import pytest
 from fastapi.testclient import TestClient
 
 from main import app
+from utils.auth import create_access_token
 
 client = TestClient(app)
+
+# テスト用のJWTトークンを生成
+test_token = create_access_token(
+    data={
+        "user_id": 1,
+        "email": "test@example.com",
+        "name": "テストユーザー",
+        "team_name": "チームA",
+    }
+)
 
 
 def test_present_bt():
@@ -11,7 +22,7 @@ def test_present_bt():
     response = client.post(
         "/api/v1/points/present",
         json={"receiver_id": 2},  # amountは不要（固定値）
-        headers={"Authorization": "Bearer dummy_jwt_token"},
+        headers={"Authorization": f"Bearer {test_token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -35,7 +46,7 @@ def test_present_bt():
 def test_get_points_status():
     """GET /api/v1/points/status - 自分のポイント残高を取得"""
     response = client.get(
-        "/api/v1/points/status", headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/points/status", headers={"Authorization": f"Bearer {test_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -54,7 +65,7 @@ def test_get_points_status():
 def test_trigger_bt_time():
     """POST /api/v1/points/time - BTtime（休憩）を発動"""
     response = client.post(
-        "/api/v1/points/time", headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/points/time", headers={"Authorization": f"Bearer {test_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -80,7 +91,7 @@ def test_trigger_bt_time():
 def test_trigger_bt_fever():
     """POST /api/v1/points/fever - BTfever（お祭り）を発動"""
     response = client.post(
-        "/api/v1/points/fever", headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/points/fever", headers={"Authorization": f"Bearer {test_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -106,7 +117,7 @@ def test_trigger_bt_fever():
 def test_get_point_history():
     """GET /api/v1/points/history - 自分のポイント履歴を取得"""
     response = client.get(
-        "/api/v1/points/history", headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/points/history", headers={"Authorization": f"Bearer {test_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -132,7 +143,7 @@ def test_get_point_history():
 def test_get_users_points():
     """GET /api/v1/points/users - 全ユーザーのポイント一覧を取得"""
     response = client.get(
-        "/api/v1/points/users", headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/points/users", headers={"Authorization": f"Bearer {test_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -155,7 +166,7 @@ def test_get_users_points():
 def test_get_points_status_with_user_id():
     """GET /api/v1/points/status?user_id=2 - 特定ユーザーのポイント残高を取得"""
     response = client.get(
-        "/api/v1/points/status?user_id=2", headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/points/status?user_id=2", headers={"Authorization": f"Bearer {test_token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -168,7 +179,7 @@ def test_get_point_history_with_user_id():
     """GET /api/v1/points/history?user_id=3 - 特定ユーザーのポイント履歴を取得"""
     response = client.get(
         "/api/v1/points/history?user_id=3",
-        headers={"Authorization": "Bearer dummy_jwt_token"},
+        headers={"Authorization": f"Bearer {test_token}"},
     )
     assert response.status_code == 200
     data = response.json()

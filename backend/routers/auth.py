@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
 
 from utils.auth import create_access_token, verify_google_token
@@ -26,6 +26,7 @@ class UserInfo(BaseModel):
     name: str
     email: str
     role: str  # member / admin
+    team_name: str  # 所属グループ名
     created_at: str
     updated_at: str
 
@@ -43,8 +44,33 @@ class CurrentUserResponse(BaseModel):
     name: str
     email: str
     role: str  # member / admin
+    team_name: str  # 所属グループ名
     created_at: str
     updated_at: str
+
+
+class UserListItem(BaseModel):
+    """ユーザーリストアイテム（BT送付先選択用）"""
+
+    id: int
+    name: str
+    nickname: str | None = None
+    use_nickname: bool = False
+    team_name: str  # 所属グループ名
+
+
+class UsersListResponse(BaseModel):
+    """ユーザー一覧レスポンス"""
+
+    users: list[UserListItem]
+
+
+class UpdateProfileRequest(BaseModel):
+    """プロフィール更新リクエスト"""
+
+    name: str | None = None
+    nickname: str | None = None
+    use_nickname: bool | None = None
 
 
 @router.post("/google", response_model=GoogleLoginResponse)
@@ -84,12 +110,13 @@ async def google_login(request: GoogleLoginRequest):
         user = users_store[email]
         user["updated_at"] = now
     else:
-        # 新規ユーザー
+        # 新規ユーザー（デフォルトでteam_name="チームA"に所属）
         user = {
             "id": user_id_counter,
             "email": email,
             "name": name,
             "role": "member",
+            "team_name": "チームA",  # デフォルトグループ
             "created_at": now,
             "updated_at": now,
         }
@@ -98,7 +125,12 @@ async def google_login(request: GoogleLoginRequest):
 
     # JWT Access Tokenを生成
     access_token = create_access_token(
-        data={"user_id": user["id"], "email": user["email"], "name": user["name"]}
+        data={
+            "user_id": user["id"],
+            "email": user["email"],
+            "name": user["name"],
+            "team_name": user["team_name"],
+        }
     )
 
     return GoogleLoginResponse(
@@ -108,6 +140,7 @@ async def google_login(request: GoogleLoginRequest):
             name=user["name"],
             email=user["email"],
             role=user["role"],
+            team_name=user["team_name"],
             created_at=user["created_at"],
             updated_at=user["updated_at"],
         ),
@@ -133,6 +166,7 @@ async def get_current_user_info(current_user: CurrentUser = Depends(get_current_
             name=current_user.name,
             email=current_user.email,
             role="member",
+            team_name=current_user.team_name,
             created_at=now,
             updated_at=now,
         )
@@ -142,6 +176,85 @@ async def get_current_user_info(current_user: CurrentUser = Depends(get_current_
         name=user["name"],
         email=user["email"],
         role=user["role"],
+        team_name=user["team_name"],
+        created_at=user["created_at"],
+        updated_at=user["updated_at"],
+    )
+
+
+@router.get("/users", response_model=UsersListResponse)
+async def get_users_list(current_user: CurrentUser = Depends(get_current_user)):
+    """
+    ユーザー一覧を取得（モック）
+    - BT送付先選択で使用
+    - 同じチームのメンバーのみ返す
+    """
+    # モックデータ: 全ユーザー（複数チーム）
+    all_mock_users = [
+        UserListItem(
+            id=1, name="テストユーザー", nickname="テスト太郎", use_nickname=True, team_name="チームA"
+        ),
+        UserListItem(id=2, name="山田太郎", nickname=None, use_nickname=False, team_name="チームA"),
+        UserListItem(id=3, name="佐藤花子", nickname="さとはな", use_nickname=True, team_name="チームA"),
+        UserListItem(id=4, name="鈴木一郎", nickname=None, use_nickname=False, team_name="チームB"),
+        UserListItem(id=5, name="田中美咲", nickname="みさっち", use_nickname=False, team_name="チームB"),
+    ]
+
+    # 同じチームのユーザーのみフィルタリング
+    team_users = [user for user in all_mock_users if user.team_name == current_user.team_name]
+
+    return UsersListResponse(users=team_users)
+
+
+@router.patch("/profile", response_model=CurrentUserResponse)
+async def update_profile(
+    request: UpdateProfileRequest, current_user: CurrentUser = Depends(get_current_user)
+):
+    """
+    プロフィールを更新（モック）
+    - 名前、ニックネーム、ニックネーム表示設定を更新
+    """
+    from datetime import datetime, timezone
+
+    # メモリストアからユーザー情報を取得
+    user = users_store.get(current_user.email)
+
+    if user is None:
+        # ストアにない場合は新規作成（通常は発生しない）
+        now = datetime.now(timezone.utc).isoformat()
+        user = {
+            "id": current_user.user_id,
+            "email": current_user.email,
+            "name": current_user.name,
+            "role": "member",
+            "team_name": current_user.team_name,
+            "created_at": now,
+            "updated_at": now,
+            "nickname": None,
+            "use_nickname": False,
+        }
+        users_store[current_user.email] = user
+
+    # 更新処理
+    now = datetime.now(timezone.utc).isoformat()
+
+    if request.name is not None:
+        user["name"] = request.name
+
+    if request.nickname is not None:
+        user["nickname"] = request.nickname
+
+    if request.use_nickname is not None:
+        user["use_nickname"] = request.use_nickname
+
+    user["updated_at"] = now
+
+    return CurrentUserResponse(
+        id=user["id"],
+        name=user["name"],
+        email=user["email"],
+        role=user["role"],
+        team_name=user["team_name"],
         created_at=user["created_at"],
         updated_at=user["updated_at"],
     )

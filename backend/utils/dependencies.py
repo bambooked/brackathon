@@ -10,6 +10,7 @@ class CurrentUser(BaseModel):
     user_id: int
     email: str
     name: str
+    team_name: str
 
 
 async def get_current_user(authorization: str | None = Header(None)) -> CurrentUser:
@@ -56,15 +57,16 @@ async def get_current_user(authorization: str | None = Header(None)) -> CurrentU
     user_id = payload.get("user_id")
     email = payload.get("email")
     name = payload.get("name")
+    team_name = payload.get("team_name")
 
-    if user_id is None or email is None or name is None:
+    if user_id is None or email is None or name is None or team_name is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="トークンに必要な情報が含まれていません",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return CurrentUser(user_id=user_id, email=email, name=name)
+    return CurrentUser(user_id=user_id, email=email, name=name, team_name=team_name)
 
 
 async def get_current_user_optional(authorization: str | None = Header(None)) -> CurrentUser | None:

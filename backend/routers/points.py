@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
+from utils.dependencies import CurrentUser, get_current_user
 
 router = APIRouter(prefix="/api/v1/points", tags=["ポイント・手渡し"])
 
@@ -87,18 +89,19 @@ class TriggerEventResponse(BaseModel):
 
 
 @router.post("/present", response_model=PresentBTResponse)
-async def present_bt(request: PresentBTRequest, authorization: str | None = Header(None)):
+async def present_bt(request: PresentBTRequest, current_user: CurrentUser = Depends(get_current_user)):
     """
     他のユーザーにBTを手渡し（モック）
     - 送信者のみ固定10ポイント消費
     - 受信者はリアルBTを受け取るだけでアプリ内ポイントは増減なし
     - point_transactions には送信者のマイナス履歴1件のみ記録
+    - 同じチームのユーザーにのみ送信可能（TODO: DB実装時にバリデーション追加）
     """
     BT_PRESENT_COST = 10  # BT1個あたりの消費ポイント
 
     sender_transaction = PointTransaction(
         id=1,
-        user_id=1,  # 送信者
+        user_id=current_user.user_id,  # 送信者
         amount=-BT_PRESENT_COST,  # 負の値（固定10ポイント）
         transaction_type="point_exchange",
         source_type="present",
@@ -115,14 +118,16 @@ async def present_bt(request: PresentBTRequest, authorization: str | None = Head
 
 
 @router.get("/status", response_model=PointsStatusResponse)
-async def get_points_status(user_id: int | None = None, authorization: str | None = Header(None)):
+async def get_points_status(
+    user_id: int | None = None, current_user: CurrentUser = Depends(get_current_user)
+):
     """
     ポイント残高を取得（モック）
     - user_id指定なし: 自分の残高
-    - user_id指定あり: 指定ユーザーの残高
+    - user_id指定あり: 指定ユーザーの残高（同じチームのユーザーのみ、TODO: DB実装時にバリデーション追加）
     """
-    # user_idが指定されていない場合は自分（user_id=1）とする
-    target_user_id = user_id if user_id is not None else 1
+    # user_idが指定されていない場合は自分の残高
+    target_user_id = user_id if user_id is not None else current_user.user_id
 
     # モック: user_idに応じて異なる残高を返す
     balance_map = {1: 150, 2: 120, 3: 110, 4: 95, 5: 80}
@@ -134,17 +139,17 @@ async def get_points_status(user_id: int | None = None, authorization: str | Non
 
 
 @router.post("/time", response_model=TriggerEventResponse)
-async def trigger_bt_time(authorization: str | None = Header(None)):
+async def trigger_bt_time(current_user: CurrentUser = Depends(get_current_user)):
     """
     BTtime（休憩）を発動（モック）
     - 自分のポイントを50ポイント消費
-    - チーム全体をBTtime状態にする
+    - 同じチーム全体をBTtime状態にする
     """
     TIME_COST = 50
 
     transaction = PointTransaction(
         id=101,
-        user_id=1,
+        user_id=current_user.user_id,
         amount=-TIME_COST,
         transaction_type="point_exchange",
         source_type="event_trigger",
@@ -163,17 +168,17 @@ async def trigger_bt_time(authorization: str | None = Header(None)):
 
 
 @router.post("/fever", response_model=TriggerEventResponse)
-async def trigger_bt_fever(authorization: str | None = Header(None)):
+async def trigger_bt_fever(current_user: CurrentUser = Depends(get_current_user)):
     """
     BTfever（お祭り）を発動（モック）
     - 自分のポイントを150ポイント消費
-    - チーム全体をBTfever状態にする
+    - 同じチーム全体をBTfever状態にする
     """
     FEVER_COST = 150
 
     transaction = PointTransaction(
         id=102,
-        user_id=1,
+        user_id=current_user.user_id,
         amount=-FEVER_COST,
         transaction_type="point_exchange",
         source_type="event_trigger",
@@ -192,14 +197,16 @@ async def trigger_bt_fever(authorization: str | None = Header(None)):
 
 
 @router.get("/history", response_model=PointHistoryResponse)
-async def get_point_history(user_id: int | None = None, authorization: str | None = Header(None)):
+async def get_point_history(
+    user_id: int | None = None, current_user: CurrentUser = Depends(get_current_user)
+):
     """
     ポイント履歴を取得（モック）
     - user_id指定なし: 自分の履歴
-    - user_id指定あり: 指定ユーザーの履歴
+    - user_id指定あり: 指定ユーザーの履歴（同じチームのユーザーのみ、TODO: DB実装時にバリデーション追加）
     """
-    # user_idが指定されていない場合は自分（user_id=1）とする
-    target_user_id = user_id if user_id is not None else 1
+    # user_idが指定されていない場合は自分の履歴
+    target_user_id = user_id if user_id is not None else current_user.user_id
 
     # モックデータ: 最近のトランザクション履歴
     mock_transactions = [
@@ -255,13 +262,14 @@ async def get_point_history(user_id: int | None = None, authorization: str | Non
 
 
 @router.get("/users", response_model=UsersPointsResponse)
-async def get_users_points(authorization: str | None = Header(None)):
+async def get_users_points(current_user: CurrentUser = Depends(get_current_user)):
     """
     全ユーザーのポイント残高一覧を取得（モック）
     - point_accounts と users テーブルを JOIN
+    - 同じチームのユーザーのみ返す
     """
-    # モックデータ: チーム全体のポイント一覧
-    mock_users = [
+    # モックデータ: 全ユーザーのポイント一覧（複数チーム）
+    all_mock_users = [
         UserPointSummary(user_id=1, user_name="テストユーザー", balance=150),
         UserPointSummary(user_id=2, user_name="山田太郎", balance=120),
         UserPointSummary(user_id=3, user_name="佐藤花子", balance=110),
@@ -269,4 +277,7 @@ async def get_users_points(authorization: str | None = Header(None)):
         UserPointSummary(user_id=5, user_name="田中美咲", balance=80),
     ]
 
-    return UsersPointsResponse(users=mock_users)
+    # NOTE: 実際のDB実装では、users テーブルと JOIN して team_name でフィルタリング
+    # モックでは簡易的に全ユーザーを返す（本来は team_name が必要）
+    # TODO: DB実装時に team_name フィールドを追加してフィルタリング
+    return UsersPointsResponse(users=all_mock_users)
