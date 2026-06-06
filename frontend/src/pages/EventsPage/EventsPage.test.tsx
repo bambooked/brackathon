@@ -1,8 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import EventsPage from './EventsPage'
+import { beforeEach,describe, expect, it, vi } from 'vitest'
+
 import * as pointsApi from '@/api/points'
+
+import EventsPage from './EventsPage'
 
 vi.mock('@/api/points')
 const startEvent = vi.mocked(pointsApi.startEvent)

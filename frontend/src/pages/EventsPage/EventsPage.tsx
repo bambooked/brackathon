@@ -3,8 +3,9 @@
 // ポイントを消費して開催する。コストは PRESENT 基準の倍率。
 // ============================================================
 import { useState } from 'react'
+
 import { startEvent } from '@/api/points'
-import { POINT_COST, type BTEvent } from '@/types'
+import { type BTEvent,POINT_COST } from '@/types'
 
 export default function EventsPage() {
   const [activeEvent, setActiveEvent] = useState<BTEvent | null>(null)

@@ -1,7 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import DashboardPage from './DashboardPage'
+import { beforeEach,describe, expect, it, vi } from 'vitest'
+
 import * as pointsApi from '@/api/points'
+
+import DashboardPage from './DashboardPage'
 
 // ログイン済みユーザーを固定するため useAuth をモック
 vi.mock('@/contexts/AuthContext', async (importOriginal) => {

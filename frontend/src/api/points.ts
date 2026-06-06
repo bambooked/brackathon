@@ -7,6 +7,7 @@
 //   - startEvent    : POST /events           (type -> BTEvent)
 // ============================================================
 import type { BTEvent, EventType, Present } from '@/types'
+
 import { mockDelay } from './client'
 
 export async function fetchMyPoints(): Promise<number> {

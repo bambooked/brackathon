@@ -2,17 +2,13 @@
 // BTメーター — チームの貯まったポイントを視覚化するゲージ
 // 進捗の可視化が狙い。フィーバー(満タン)で見た目が変わる。
 // ============================================================
+import { clampPercent } from './clampPercent'
+
 interface BTMeterProps {
   /** 現在のポイント */
   current: number
   /** 満タン(フィーバー)とみなす閾値 */
   max: number
-}
-
-export function clampPercent(current: number, max: number): number {
-  if (max <= 0) return 0
-  const pct = (current / max) * 100
-  return Math.max(0, Math.min(100, Math.round(pct)))
 }
 
 export default function BTMeter({ current, max }: BTMeterProps) {

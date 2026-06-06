@@ -6,6 +6,7 @@
 //   下記は接続前のモック。TODO(api) を本実装に置換してください。
 // ============================================================
 import type { AuthResult, LoginInput, User } from '@/types'
+
 import { mockDelay } from './client'
 
 export async function login(input: LoginInput): Promise<AuthResult> {

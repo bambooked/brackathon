@@ -1,9 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import ReportsPage from './ReportsPage'
+import { beforeEach,describe, expect, it, vi } from 'vitest'
+
 import * as reportsApi from '@/api/reports'
 import type { Report } from '@/types'
+
+import ReportsPage from './ReportsPage'
 
 // API はモック化 (ネットワーク遅延を排除して即時に解決)
 vi.mock('@/api/reports')

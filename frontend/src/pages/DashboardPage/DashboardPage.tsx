@@ -2,9 +2,10 @@
 // ダッシュボード — 保有PT と BTメーター(チーム進捗) を表示
 // ============================================================
 import { useEffect, useState } from 'react'
+
+import { fetchMyPoints, fetchTeamPoints } from '@/api/points'
 import BTMeter from '@/components/BTMeter/BTMeter'
 import { useAuth } from '@/contexts/AuthContext'
-import { fetchMyPoints, fetchTeamPoints } from '@/api/points'
 import { POINT_COST } from '@/types'
 
 // フィーバー閾値(仮): プレゼント基準 × 人数想定。接続後に要調整。

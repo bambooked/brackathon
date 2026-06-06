@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import BTMeter, { clampPercent } from './BTMeter'
+import { describe, expect, it } from 'vitest'
+
+import BTMeter from './BTMeter'
+import { clampPercent } from './clampPercent'
 
 describe('clampPercent', () => {
   it('割合を0〜100に丸める', () => {
