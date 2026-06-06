@@ -101,22 +101,31 @@ async def _apply_points(
 async def create_report(
     user_id: int, report_date: str, title: str | None, body: str
 ) -> dict:
-    """日報を作成"""
+    """日報を作成（同日の日報が存在する場合は上書き更新）"""
     user = await _ensure_user(user_id)
     report_day = date.fromisoformat(report_date)
 
-    # AI判定のダミーロジック。DBモックではないため判断待ちとして残す。
     ai_points = 10 if len(body) > 50 else 5
 
     async with in_transaction():
-        report = await DailyReport.create(
-            user=user,
-            report_date=report_day,
-            title=title,
-            body=body,
-        )
+        try:
+            report = await DailyReport.create(
+                user=user,
+                report_date=report_day,
+                title=title,
+                body=body,
+            )
+            created = True
+        except IntegrityError:
+            # 同日の日報がすでに存在する場合は更新する
+            report = await DailyReport.get(user_id=user_id, report_date=report_day)
+            report.title = title
+            report.body = body
+            await report.save()
+            created = False
+
         transaction = None
-        if ai_points > 0:
+        if created and ai_points > 0:
             transaction, _ = await _apply_points(
                 user_id=user_id,
                 amount=ai_points,
@@ -134,7 +143,7 @@ async def create_report(
         "body": report.body,
         "created_at": report.created_at.isoformat(),
         "point_transaction_id": transaction.id if transaction is not None else None,
-        "points_awarded": ai_points,
+        "points_awarded": ai_points if created else 0,
     }
 
 

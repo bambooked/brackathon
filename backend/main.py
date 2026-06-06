@@ -1,16 +1,16 @@
 import os
+from dotenv import load_dotenv
+
+# 他のモジュールが os.getenv() を module-level で呼ぶ前にロードする
+load_dotenv()
 
 from contextlib import asynccontextmanager
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from db.config import close_db, init_db
 from routers import auth, points, reports
-
-# 環境変数を読み込み（.envファイルが存在する場合）
-load_dotenv()
 
 
 @asynccontextmanager

@@ -5,6 +5,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./db:/db:ro
     environment:
       - DATABASE_URL=postgres://postgres:password@db:5432/bt_db
     depends_on:
