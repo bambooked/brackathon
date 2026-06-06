@@ -1,15 +1,9 @@
 from unittest.mock import patch
 
-import pytest
-from fastapi.testclient import TestClient
-
-from main import app
 from utils.auth import create_access_token
 
-client = TestClient(app)
 
-
-def test_google_login():
+def test_google_login(client):
     """POST /api/v1/auth/google - Googleログインでアクセストークンとユーザー情報を取得"""
     # Google ID Token検証をモック
     mock_id_info = {
@@ -35,7 +29,7 @@ def test_google_login():
     assert "updated_at" in data["user"]
 
 
-def test_google_login_invalid_token():
+def test_google_login_invalid_token(client):
     """POST /api/v1/auth/google - 無効なGoogle ID Tokenでエラー"""
     # Google ID Token検証をモック（検証失敗）
     with patch("utils.auth.id_token.verify_oauth2_token", side_effect=ValueError("Invalid token")):
@@ -47,7 +41,7 @@ def test_google_login_invalid_token():
     assert data["detail"] == "無効なGoogle ID Tokenです"
 
 
-def test_get_current_user():
+def test_get_current_user(client):
     """GET /api/v1/auth/me - 現在のユーザー情報を取得"""
     # テスト用のJWTトークンを生成
     test_token = create_access_token(
@@ -78,7 +72,7 @@ def test_get_current_user():
     assert "updated_at" in data
 
 
-def test_get_current_user_no_auth():
+def test_get_current_user_no_auth(client):
     """GET /api/v1/auth/me - 認証なしでエラー"""
     response = client.get("/api/v1/auth/me")
     assert response.status_code == 401
@@ -86,7 +80,7 @@ def test_get_current_user_no_auth():
     assert "detail" in data
 
 
-def test_get_current_user_invalid_token():
+def test_get_current_user_invalid_token(client):
     """GET /api/v1/auth/me - 無効なトークンでエラー"""
     response = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer invalid_token"})
     assert response.status_code == 401
@@ -94,7 +88,7 @@ def test_get_current_user_invalid_token():
     assert "detail" in data
 
 
-def test_get_users_list():
+def test_get_users_list(client):
     """GET /api/v1/auth/users - ユーザー一覧を取得"""
     # テスト用のJWTトークンを生成（チームAのユーザー）
     test_token = create_access_token(
@@ -126,7 +120,7 @@ def test_get_users_list():
         assert user["team_name"] == "チームA"
 
 
-def test_update_profile():
+def test_update_profile(client):
     """PATCH /api/v1/auth/profile - プロフィールを更新"""
     # テスト用のJWTトークンを生成
     test_token = create_access_token(
@@ -156,7 +150,7 @@ def test_update_profile():
     assert "updated_at" in data
 
 
-def test_update_profile_partial():
+def test_update_profile_partial(client):
     """PATCH /api/v1/auth/profile - プロフィールを部分更新（nicknameのみ）"""
     # テスト用のJWTトークンを生成
     test_token = create_access_token(
