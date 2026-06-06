@@ -24,7 +24,7 @@ async def create_report(
     request: CreateReportRequest, current_user: CurrentUser = Depends(get_current_user)
 ):
     """
-    日報を投稿 - daily_reports に保存し、AI判定でポイント付与（モック）
+    日報を投稿 - daily_reports に保存し、AI判定でポイント付与
     """
     result = await report_crud.create_report(
         user_id=current_user.user_id,
@@ -39,7 +39,7 @@ async def create_report(
 @router.get("/all", response_model=AllReportsResponse)
 async def get_all_reports(current_user: CurrentUser = Depends(get_current_user)):
     """
-    全期間全ユーザーの日報を取得（モック）
+    全期間全ユーザーの日報を取得
     - 統計情報（総件数、ユーザー数、期間）を含む
     - 同じチームの日報のみ返す
     """
@@ -78,7 +78,7 @@ async def get_reports(
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
-    チームの日報一覧を取得（モック）
+    チームの日報一覧を取得
     - report_date: 日付で絞り込み (例: "2026-06-06")
     - user_id: 特定ユーザーで絞り込み
     - 同じチームの日報のみ返す
@@ -114,7 +114,7 @@ async def update_report(
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
-    日報を更新 - daily_reports の内容を更新（モック）
+    日報を更新 - daily_reports の内容を更新
     当日分の日報のみ更新可能
     """
     result = await report_crud.update_report(
@@ -133,7 +133,7 @@ async def react_to_report(
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
-    日報にリアクション - reactions に保存し、双方に point_transactions を作成（モック）
+    日報にリアクション - reactions に保存し、双方に point_transactions を作成
     """
     result = await report_crud.create_reaction(
         report_id=report_id,

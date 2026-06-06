@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 import crud.point as point_crud
 from schemas.point import (
@@ -21,16 +21,23 @@ async def present_bt(
     request: PresentBTRequest, current_user: CurrentUser = Depends(get_current_user)
 ):
     """
-    他のユーザーにBTを手渡し（モック）
+    他のユーザーにBTを手渡し
     - 送信者のみ固定10ポイント消費
     - 受信者はリアルBTを受け取るだけでアプリ内ポイントは増減なし
     - point_transactions には送信者のマイナス履歴1件のみ記録
-    - 同じチームのユーザーにのみ送信可能（TODO: DB実装時にバリデーション追加）
+    - 同じチームのユーザーにのみ送信可能
     """
-    result = await point_crud.present_bt(
-        sender_id=current_user.user_id,
-        receiver_id=request.receiver_id,
-    )
+    try:
+        result = await point_crud.present_bt(
+            sender_id=current_user.user_id,
+            receiver_id=request.receiver_id,
+            team_name=current_user.team_name,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
 
     return PresentBTResponse(
         message=result["message"],
@@ -44,12 +51,18 @@ async def get_points_status(
     user_id: int | None = None, current_user: CurrentUser = Depends(get_current_user)
 ):
     """
-    ポイント残高を取得（モック）
+    ポイント残高を取得
     - user_id指定なし: 自分の残高
-    - user_id指定あり: 指定ユーザーの残高（同じチームのユーザーのみ、TODO: DB実装時にバリデーション追加）
+    - user_id指定あり: 指定ユーザーの残高（同じチームのユーザーのみ）
     """
     target_user_id = user_id if user_id is not None else current_user.user_id
-    result = await point_crud.get_point_status(target_user_id)
+    try:
+        result = await point_crud.get_point_status(target_user_id, current_user.team_name)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
 
     return PointsStatusResponse(**result)
 
@@ -57,7 +70,7 @@ async def get_points_status(
 @router.post("/time", response_model=TriggerEventResponse)
 async def trigger_bt_time(current_user: CurrentUser = Depends(get_current_user)):
     """
-    BTtime（休憩）を発動（モック）
+    BTtime（休憩）を発動
     - 自分のポイントを50ポイント消費
     - 同じチーム全体をBTtime状態にする
     """
@@ -78,7 +91,7 @@ async def trigger_bt_time(current_user: CurrentUser = Depends(get_current_user))
 @router.post("/fever", response_model=TriggerEventResponse)
 async def trigger_bt_fever(current_user: CurrentUser = Depends(get_current_user)):
     """
-    BTfever（お祭り）を発動（モック）
+    BTfever（お祭り）を発動
     - 自分のポイントを150ポイント消費
     - 同じチーム全体をBTfever状態にする
     """
@@ -101,12 +114,18 @@ async def get_point_history(
     user_id: int | None = None, current_user: CurrentUser = Depends(get_current_user)
 ):
     """
-    ポイント履歴を取得（モック）
+    ポイント履歴を取得
     - user_id指定なし: 自分の履歴
-    - user_id指定あり: 指定ユーザーの履歴（同じチームのユーザーのみ、TODO: DB実装時にバリデーション追加）
+    - user_id指定あり: 指定ユーザーの履歴（同じチームのユーザーのみ）
     """
     target_user_id = user_id if user_id is not None else current_user.user_id
-    result = await point_crud.get_point_history(target_user_id)
+    try:
+        result = await point_crud.get_point_history(target_user_id, current_user.team_name)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
 
     return PointHistoryResponse(
         transactions=[PointTransaction(**t) for t in result["transactions"]],
@@ -118,15 +137,12 @@ async def get_point_history(
 @router.get("/users", response_model=UsersPointsResponse)
 async def get_users_points(current_user: CurrentUser = Depends(get_current_user)):
     """
-    全ユーザーのポイント残高一覧を取得（モック）
+    全ユーザーのポイント残高一覧を取得
     - point_accounts と users テーブルを JOIN
     - 同じチームのユーザーのみ返す
     """
-    users = await point_crud.get_users_points()
+    users = await point_crud.get_users_points(current_user.team_name)
 
-    # NOTE: 実際のDB実装では、users テーブルと JOIN して team_name でフィルタリング
-    # モックでは簡易的に全ユーザーを返す（本来は team_name が必要）
-    # TODO: DB実装時に team_name フィールドを追加してフィルタリング
     return UsersPointsResponse(
         users=[UserPointSummary(**u) for u in users]
     )

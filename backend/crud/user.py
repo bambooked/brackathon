@@ -1,108 +1,58 @@
 """CRUD operations for User model."""
 
-from datetime import datetime, timezone
+from models import User
 
-# インメモリのユーザーストア（実際のDB統合前の一時的な実装）
-users_store: dict[str, dict] = {}
-user_id_counter = 1
+
+def _user_to_dict(user: User) -> dict:
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+        "team_name": user.team_name,
+        "nickname": user.nickname,
+        "use_nickname": user.use_nickname,
+        "created_at": user.created_at.isoformat(),
+        "updated_at": user.updated_at.isoformat(),
+    }
 
 
 async def get_user_by_email(email: str) -> dict | None:
     """メールアドレスでユーザーを取得"""
-    return users_store.get(email)
+    user = await User.get_or_none(email=email)
+    return _user_to_dict(user) if user is not None else None
 
 
 async def create_user(email: str, name: str, team_name: str = "チームA") -> dict:
     """新規ユーザーを作成"""
-    global user_id_counter
-    now = datetime.now(timezone.utc).isoformat()
-
-    user = {
-        "id": user_id_counter,
-        "email": email,
-        "name": name,
-        "role": "member",
-        "team_name": team_name,
-        "nickname": None,
-        "use_nickname": False,
-        "created_at": now,
-        "updated_at": now,
-    }
-    users_store[email] = user
-    user_id_counter += 1
-    return user
+    user = await User.create(email=email, name=name, team_name=team_name)
+    return _user_to_dict(user)
 
 
 async def update_user(email: str, **kwargs) -> dict:
     """ユーザー情報を更新"""
-    global user_id_counter
-    user = users_store.get(email)
-    now = datetime.now(timezone.utc).isoformat()
+    name = kwargs.pop("name", None)
+    team_name = kwargs.pop("team_name", None)
+    defaults = {
+        "name": name or email,
+        "team_name": team_name or "チームA",
+    }
+    user, _ = await User.get_or_create(email=email, defaults=defaults)
 
-    if user is None:
-        # ユーザーが存在しない場合は新規作成（トークンからの情報で初期化）
-        user = {
-            "id": user_id_counter,
-            "email": email,
-            "name": kwargs.get("name", email),
-            "role": "member",
-            "team_name": kwargs.get("team_name", "チームA"),
-            "nickname": None,
-            "use_nickname": False,
-            "created_at": now,
-            "updated_at": now,
-        }
-        users_store[email] = user
-        user_id_counter += 1
+    if name is not None:
+        user.name = name
+    if team_name is not None:
+        user.team_name = team_name
 
-    # 既存ユーザーまたは新規作成したユーザーを更新
     for key, value in kwargs.items():
-        if value is not None:
-            user[key] = value
-    user["updated_at"] = now
-    return user
+        if value is not None and hasattr(user, key):
+            setattr(user, key, value)
+
+    await user.save()
+    return _user_to_dict(user)
 
 
 async def get_users_by_team(team_name: str) -> list[dict]:
-    """チーム名でユーザー一覧を取得（モック）"""
-    # モックデータ: 複数チームのユーザー
-    all_mock_users = [
-        {
-            "id": 1,
-            "name": "テストユーザー",
-            "nickname": "テスト太郎",
-            "use_nickname": True,
-            "team_name": "チームA",
-        },
-        {
-            "id": 2,
-            "name": "山田太郎",
-            "nickname": None,
-            "use_nickname": False,
-            "team_name": "チームA",
-        },
-        {
-            "id": 3,
-            "name": "佐藤花子",
-            "nickname": "さとはな",
-            "use_nickname": True,
-            "team_name": "チームA",
-        },
-        {
-            "id": 4,
-            "name": "鈴木一郎",
-            "nickname": None,
-            "use_nickname": False,
-            "team_name": "チームB",
-        },
-        {
-            "id": 5,
-            "name": "田中美咲",
-            "nickname": "みさっち",
-            "use_nickname": False,
-            "team_name": "チームB",
-        },
-    ]
-
-    # チームでフィルタリング
-    return [u for u in all_mock_users if u["team_name"] == team_name]
+    """チーム名でユーザー一覧を取得"""
+    users = await User.filter(team_name=team_name).order_by("id")
+    return [_user_to_dict(user) for user in users]
