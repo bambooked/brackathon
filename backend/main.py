@@ -1,18 +1,35 @@
 import os
 
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from db.config import close_db, init_db
 from routers import auth, points, reports
 
 # 環境変数を読み込み（.envファイルが存在する場合）
 load_dotenv()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """アプリケーションのライフサイクル管理"""
+    # 起動時: Tortoise-ORMを初期化
+    await init_db()
+    print("✅ Tortoise-ORM initialized")
+    yield
+    # 終了時: DB接続をクローズ
+    await close_db()
+    print("✅ Tortoise-ORM connections closed")
+
+
 app = FastAPI(
     title="ブラックサンダーハッカソンAPI",
     description="対面コミュニケーションを活性化させるBTハッカソンアプリのバックエンドAPI",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # CORS設定 - フロントエンド（port 3000）からのアクセスを許可

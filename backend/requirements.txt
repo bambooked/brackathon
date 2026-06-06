@@ -9,3 +9,6 @@ ruff==0.3.0
 google-auth==2.27.0
 python-dotenv==1.0.0
 requests==2.31.0
+tortoise-orm==0.20.0
+aerich==0.7.2
+asyncpg==0.29.0

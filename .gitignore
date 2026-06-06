@@ -8,6 +8,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+.ruff_cache/
 
 # Python (Backend)
 **/__pycache__/
