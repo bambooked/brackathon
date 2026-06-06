@@ -1,9 +1,13 @@
 import os
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import auth, points, reports
+
+# 環境変数を読み込み（.envファイルが存在する場合）
+load_dotenv()
 
 app = FastAPI(
     title="ブラックサンダーハッカソンAPI",
