@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
-import { fetchActiveEvent, type ActiveEvent } from '@/api/points'
+import { connectEventStream, type SSEEvent } from '@/api/events'
 import { useAuth } from '@/contexts/AuthContext'
 
 const navItems = [
@@ -12,26 +12,35 @@ const navItems = [
   { to: '/mypage', label: '👤 マイページ' },
 ]
 
+const EVENT_LABEL: Record<SSEEvent['type'], string> = {
+  bt_time: '☕ BTtime 開催中！',
+  bt_fever: '⚡ BTfever 開催中！',
+}
+
 export default function Header() {
   const { user } = useAuth()
-  const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
+  const [eventLabel, setEventLabel] = useState<string | null>(null)
+  const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!user) return
-    fetchActiveEvent().then(setActiveEvent).catch(() => {})
-    // 30秒ごとにイベント状態を確認する
-    const id = setInterval(() => {
-      fetchActiveEvent().then(setActiveEvent).catch(() => {})
-    }, 30_000)
-    return () => clearInterval(id)
-  }, [user])
 
-  const eventLabel =
-    activeEvent?.active
-      ? activeEvent.event_type === 'time'
-        ? '☕ BTtime 開催中！'
-        : '⚡ BTfever 開催中！'
-      : null
+    const es = connectEventStream((event) => {
+      setEventLabel(EVENT_LABEL[event.type])
+
+      // 既存のタイマーをリセットして ends_at に合わせてバナーを消す
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
+      const remaining = new Date(event.ends_at).getTime() - Date.now()
+      if (remaining > 0) {
+        clearTimerRef.current = setTimeout(() => setEventLabel(null), remaining)
+      }
+    })
+
+    return () => {
+      es.close()
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
+    }
+  }, [user])
 
   return (
     <div>

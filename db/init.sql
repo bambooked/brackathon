@@ -26,6 +26,17 @@ CREATE TABLE IF NOT EXISTS daily_reports (
 
 CREATE INDEX IF NOT EXISTS idx_daily_reports_report_date ON daily_reports (report_date);
 
+CREATE TABLE IF NOT EXISTS break_thunder_schedules (
+    id SERIAL PRIMARY KEY,
+    team_name VARCHAR(255) NOT NULL,
+    triggered_by_user_id INT NOT NULL REFERENCES users (id),
+    scheduled_at TIMESTAMPTZ NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_bt_schedules_status ON break_thunder_schedules (status);
+
 CREATE TABLE IF NOT EXISTS reactions (
     id SERIAL PRIMARY KEY,
     daily_report_id INT NOT NULL REFERENCES daily_reports (id) ON DELETE CASCADE,

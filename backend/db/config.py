@@ -29,8 +29,9 @@ TORTOISE_ORM: dict[str, Any] = {
 
 
 async def init_db() -> None:
-    """Tortoise-ORMを初期化"""
+    """Tortoise-ORMを初期化し、不足テーブルを自動作成する"""
     await Tortoise.init(config=TORTOISE_ORM)
+    await Tortoise.generate_schemas(safe=True)
 
 
 async def close_db() -> None:
