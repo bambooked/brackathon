@@ -230,24 +230,29 @@ async def create_reaction(
 
     await _ensure_user(user_id)
 
+    author_transaction = None
+    reactor_transaction = None
+
     async with in_transaction():
+        created = True
         try:
-            reaction = await Reaction.create(
-                daily_report_id=report_id,
-                user_id=user_id,
-                type=reaction_type,
-            )
-            created = True
+            # ネストした in_transaction() は SAVEPOINT になる。
+            # INSERT が重複で失敗しても SAVEPOINT までロールバックされるだけで
+            # 外側トランザクションは健全なまま継続できる。
+            async with in_transaction():
+                reaction = await Reaction.create(
+                    daily_report_id=report_id,
+                    user_id=user_id,
+                    type=reaction_type,
+                )
         except IntegrityError:
+            created = False
             reaction = await Reaction.get(
                 daily_report_id=report_id,
                 user_id=user_id,
                 type=reaction_type,
             )
-            created = False
 
-        author_transaction = None
-        reactor_transaction = None
         if created:
             author_transaction, _ = await _apply_points(
                 user_id=report.user_id,
@@ -271,14 +276,10 @@ async def create_reaction(
     return {
         "reaction": _reaction_to_dict(reaction),
         "author_point_transaction": (
-            _transaction_to_dict(author_transaction)
-            if author_transaction is not None
-            else None
+            _transaction_to_dict(author_transaction) if author_transaction else None
         ),
         "reactor_point_transaction": (
-            _transaction_to_dict(reactor_transaction)
-            if reactor_transaction is not None
-            else None
+            _transaction_to_dict(reactor_transaction) if reactor_transaction else None
         ),
         "my_new_balance": account.balance,
         "message": f"日報 {report_id} に {reaction_type} リアクションを送りました",
