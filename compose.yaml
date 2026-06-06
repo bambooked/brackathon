@@ -5,8 +5,9 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./db:/db:ro
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/bt_db
+      - DATABASE_URL=postgres://postgres:password@db:5432/bt_db
     depends_on:
       db:
         condition: service_healthy
@@ -22,7 +23,7 @@ services:
     tty: true
 
   db:
-    image: postgres:16-alpine
+    build: ./db
     ports:
       - "5432:5432"
     environment:
@@ -30,9 +31,12 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: bt_db
     volumes:
-      - ./db:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d bt_db"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+volumes:
+  db_data:
