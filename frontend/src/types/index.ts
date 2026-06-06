@@ -30,7 +30,8 @@ export type PointReason =
   | 'report_reaction' // 日報リアクション
   | 'invisible_task' // 見えない業務の見える化 (AI判定)
   | 'present' // BTプレゼント消費
-  | 'bt_time' // BTtime 開催消費
+  | 'break_thunder' // Break Thunder 開催消費
+  | 'bt_time' // 旧称。既存データ互換用
   | 'bt_fever' // BTfever 開催消費
 
 export interface PointTransaction {
@@ -79,8 +80,8 @@ export interface Present {
   createdAt: string
 }
 
-// ---- イベント (BTtime / BTfever) ----
-export type EventType = 'bt_time' | 'bt_fever'
+// ---- イベント (Break Thunder / BTfever) ----
+export type EventType = 'break_thunder' | 'bt_time' | 'bt_fever'
 
 export interface BTEvent {
   id: string

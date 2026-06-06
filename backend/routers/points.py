@@ -78,7 +78,7 @@ async def trigger_bt_time(
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
-    BTtime（休憩）を発動
+    Break Thunder（休憩）を発動
     - 自分のポイントを50ポイント消費
     - scheduled_at 省略 or 現在時刻以前: 即時 SSE ブロードキャスト
     - scheduled_at が未来の時刻: その時刻に SSE ブロードキャストを予約

@@ -17,12 +17,12 @@ const SHOP_ITEMS = [
     type: 'present' as const,
   },
   {
-    id: 'bt_time',
+    id: 'break_thunder',
     icon: '☕',
-    title: 'BTtime',
+    title: 'Break Thunder',
     description: 'ブラックサンダーを食べながら作業休憩タイム！臨時掲示板も開設',
     cost: POINT_COST.BT_TIME,
-    type: 'bt_time' as const,
+    type: 'break_thunder' as const,
   },
   {
     id: 'bt_fever',
@@ -34,7 +34,7 @@ const SHOP_ITEMS = [
   },
 ]
 
-type ShopItemType = 'present' | 'bt_time' | 'bt_fever'
+type ShopItemType = 'present' | 'break_thunder' | 'bt_fever'
 
 /** datetime-local の値（"YYYY-MM-DDThh:mm"）を ISO8601 UTC 文字列に変換する */
 function toISOString(localDatetime: string): string {
@@ -49,7 +49,7 @@ export default function ShopPage() {
   const [toUserId, setToUserId] = useState('')
   const [message, setMessage] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
-  const [btTimeMode, setBtTimeMode] = useState<'now' | 'schedule'>('now')
+  const [breakThunderMode, setBreakThunderMode] = useState<'now' | 'schedule'>('now')
   const [activeEvent, setActiveEvent] = useState<(BTEvent & { scheduledAt: string | null }) | null>(null)
   const [presentSent, setPresentSent] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -79,14 +79,14 @@ export default function ShopPage() {
         setSelected(null)
       } else {
         const isoScheduledAt =
-          selected === 'bt_time' && btTimeMode === 'schedule' && scheduledAt
+          selected === 'break_thunder' && breakThunderMode === 'schedule' && scheduledAt
             ? toISOString(scheduledAt)
             : undefined
         const event = await startEvent(selected, isoScheduledAt)
-        setMyPoints((p) => p - (selected === 'bt_time' ? POINT_COST.BT_TIME : POINT_COST.BT_FEVER))
+        setMyPoints((p) => p - (selected === 'break_thunder' ? POINT_COST.BT_TIME : POINT_COST.BT_FEVER))
         setActiveEvent(event)
         setScheduledAt('')
-        setBtTimeMode('now')
+        setBreakThunderMode('now')
         setSelected(null)
       }
     } catch (err) {
@@ -117,12 +117,12 @@ export default function ShopPage() {
       {/* 発動・予約完了バナー */}
       {activeEvent && (
         <div className="rounded-xl bg-bt-gold/20 border border-bt-gold p-4 flex items-center gap-3">
-          <span className="text-3xl">{activeEvent.type === 'bt_time' ? '☕' : '⚡'}</span>
+          <span className="text-3xl">{activeEvent.type === 'break_thunder' || activeEvent.type === 'bt_time' ? '☕' : '⚡'}</span>
           <div>
             {activeEvent.scheduledAt ? (
               <>
                 <p className="font-bold">
-                  {activeEvent.type === 'bt_time' ? 'BTtime' : 'BTfever'} を予約しました！
+                  {activeEvent.type === 'break_thunder' || activeEvent.type === 'bt_time' ? 'Break Thunder' : 'BTfever'} を予約しました！
                 </p>
                 <p className="text-sm text-bt-dark/60">
                   {new Date(activeEvent.scheduledAt).toLocaleString('ja-JP', {
@@ -136,7 +136,7 @@ export default function ShopPage() {
             ) : (
               <>
                 <p className="font-bold">
-                  {activeEvent.type === 'bt_time' ? 'BTtime' : 'BTfever'} 開催中！
+                  {activeEvent.type === 'break_thunder' || activeEvent.type === 'bt_time' ? 'Break Thunder' : 'BTfever'} 開催中！
                 </p>
                 <p className="text-sm text-bt-dark/60">チームに通知が送られました 🍫</p>
               </>
@@ -230,15 +230,15 @@ export default function ShopPage() {
             </>
           )}
 
-          {selected === 'bt_time' && (
+          {selected === 'break_thunder' && (
             <div className="space-y-3">
               {/* モード切替 */}
               <div className="flex rounded-lg border border-bt-dark/15 overflow-hidden text-sm font-medium">
                 <button
                   type="button"
-                  onClick={() => setBtTimeMode('now')}
+                  onClick={() => setBreakThunderMode('now')}
                   className={`flex-1 py-2 transition-colors ${
-                    btTimeMode === 'now'
+                    breakThunderMode === 'now'
                       ? 'bg-bt-gold text-bt-dark'
                       : 'bg-white text-bt-dark/50 hover:bg-bt-gold/10'
                   }`}
@@ -247,9 +247,9 @@ export default function ShopPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setBtTimeMode('schedule')}
+                  onClick={() => setBreakThunderMode('schedule')}
                   className={`flex-1 py-2 transition-colors ${
-                    btTimeMode === 'schedule'
+                    breakThunderMode === 'schedule'
                       ? 'bg-bt-gold text-bt-dark'
                       : 'bg-white text-bt-dark/50 hover:bg-bt-gold/10'
                   }`}
@@ -258,13 +258,13 @@ export default function ShopPage() {
                 </button>
               </div>
 
-              {btTimeMode === 'now' && (
+              {breakThunderMode === 'now' && (
                 <p className="text-sm text-bt-dark/60 bg-bt-dark/5 rounded-lg px-3 py-2">
                   確定するとチームメンバー全員に即時通知が届きます。
                 </p>
               )}
 
-              {btTimeMode === 'schedule' && (
+              {breakThunderMode === 'schedule' && (
                 <div>
                   <label htmlFor="shop-scheduled-at" className="block text-sm font-medium mb-1">
                     通知時刻
@@ -294,7 +294,7 @@ export default function ShopPage() {
 
           <div className="flex gap-3">
             <button
-              onClick={() => { setSelected(null); setScheduledAt(''); setBtTimeMode('now'); setErrorMsg('') }}
+              onClick={() => { setSelected(null); setScheduledAt(''); setBreakThunderMode('now'); setErrorMsg('') }}
               className="flex-1 rounded-lg border border-bt-dark/20 py-2.5 text-sm font-medium text-bt-dark/60 hover:bg-bt-dark/5"
             >
               キャンセル
@@ -305,13 +305,13 @@ export default function ShopPage() {
                 !canAfford ||
                 confirming ||
                 (selected === 'present' && !toUserId) ||
-                (selected === 'bt_time' && btTimeMode === 'schedule' && !scheduledAt)
+                (selected === 'break_thunder' && breakThunderMode === 'schedule' && !scheduledAt)
               }
               className="flex-1 rounded-lg bg-bt-gold py-2.5 text-sm font-bold text-bt-dark disabled:opacity-40 hover:brightness-105"
             >
               {confirming
                 ? '処理中...'
-                : selected === 'bt_time' && btTimeMode === 'now'
+                : selected === 'break_thunder' && breakThunderMode === 'now'
                 ? '今すぐ発動する ☕'
                 : '確定する ⚡'}
             </button>

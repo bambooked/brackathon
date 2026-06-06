@@ -65,16 +65,17 @@ export async function fetchTeamPoints(_teamId: string): Promise<number> {
 }
 
 /**
- * BTtime / BTfever を発動する。
- * BTtime のみ scheduledAt（ISO8601）を指定可能。省略時は即時発動。
+ * Break Thunder / BTfever を発動する。
+ * Break Thunder のみ scheduledAt（ISO8601）を指定可能。省略時は即時発動。
  * scheduled_at が返る場合は未来予約、null は即時発動。
  */
 export async function startEvent(
   type: EventType,
   scheduledAt?: string,
 ): Promise<BTEvent & { scheduledAt: string | null }> {
-  const path = type === 'bt_time' ? '/points/time' : '/points/fever'
-  const body = type === 'bt_time' && scheduledAt ? { scheduled_at: scheduledAt } : undefined
+  const isBreakThunder = type === 'break_thunder' || type === 'bt_time'
+  const path = isBreakThunder ? '/points/time' : '/points/fever'
+  const body = isBreakThunder && scheduledAt ? { scheduled_at: scheduledAt } : undefined
 
   const res = await request<TriggerEventBackendResponse>(path, {
     method: 'POST',
@@ -84,11 +85,11 @@ export async function startEvent(
   const isScheduled = res.scheduled_at != null
   const endsAt = isScheduled
     ? new Date(new Date(res.scheduled_at!).getTime() + 30 * 60_000).toISOString()
-    : new Date(Date.now() + (type === 'bt_time' ? 30 : 60) * 60_000).toISOString()
+    : new Date(Date.now() + (isBreakThunder ? 15 : 60) * 60_000).toISOString()
 
   return {
     id: String(res.transaction.id),
-    type,
+    type: isBreakThunder ? 'break_thunder' : type,
     hostId: String(res.transaction.user_id),
     startedAt: res.transaction.created_at,
     endsAt,

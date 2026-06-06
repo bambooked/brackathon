@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
+import { fetchBreakThunderActive } from '@/api/breakThunder'
 import { connectEventStream, type SSEEvent } from '@/api/events'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -13,20 +14,43 @@ const navItems = [
 ]
 
 const EVENT_LABEL: Record<SSEEvent['type'], string> = {
-  bt_time: '☕ BTtime 開催中！',
+  break_thunder: '☕ Break Thunder 掲示板が開きました！',
+  bt_time: '☕ Break Thunder 掲示板が開きました！',
   bt_fever: '⚡ BTfever 開催中！',
 }
 
 export default function Header() {
   const { user } = useAuth()
   const [eventLabel, setEventLabel] = useState<string | null>(null)
+  const [breakThunderEndsAt, setBreakThunderEndsAt] = useState<string | null>(null)
   const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const breakThunderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const armBreakThunderTab = useCallback((endsAt: string) => {
+    setBreakThunderEndsAt(endsAt)
+    if (breakThunderTimerRef.current) clearTimeout(breakThunderTimerRef.current)
+    const remaining = new Date(endsAt).getTime() - Date.now()
+    if (remaining > 0) {
+      breakThunderTimerRef.current = setTimeout(() => setBreakThunderEndsAt(null), remaining)
+    } else {
+      setBreakThunderEndsAt(null)
+    }
+  }, [])
 
   useEffect(() => {
     if (!user) return
 
+    fetchBreakThunderActive()
+      .then((active) => {
+        if (active.active && active.endsAt) armBreakThunderTab(active.endsAt)
+      })
+      .catch(() => {/* ヘッダー表示だけなので失敗時は無視 */})
+
     const es = connectEventStream((event) => {
       setEventLabel(EVENT_LABEL[event.type])
+      if (event.type === 'break_thunder' || event.type === 'bt_time') {
+        armBreakThunderTab(event.ends_at)
+      }
 
       // 既存のタイマーをリセットして ends_at に合わせてバナーを消す
       if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
@@ -39,8 +63,9 @@ export default function Header() {
     return () => {
       es.close()
       if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
+      if (breakThunderTimerRef.current) clearTimeout(breakThunderTimerRef.current)
     }
-  }, [user])
+  }, [armBreakThunderTab, user])
 
   return (
     <div>
@@ -67,6 +92,20 @@ export default function Header() {
                 {item.label}
               </NavLink>
             ))}
+            {breakThunderEndsAt && (
+              <NavLink
+                to="/break-thunder"
+                className={({ isActive }) =>
+                  `animate-break-thunder-tab rounded-full px-3 py-1 font-bold shadow-sm transition-colors ${
+                    isActive
+                      ? 'bg-bt-cream text-bt-dark'
+                      : 'bg-bt-gold text-bt-dark hover:brightness-110'
+                  }`
+                }
+              >
+                ☕ 掲示板
+              </NavLink>
+            )}
           </nav>
         </div>
         {user && (

@@ -37,6 +37,18 @@ CREATE TABLE IF NOT EXISTS break_thunder_schedules (
 
 CREATE INDEX IF NOT EXISTS idx_bt_schedules_status ON break_thunder_schedules (status);
 
+CREATE TABLE IF NOT EXISTS break_thunder_messages (
+    id SERIAL PRIMARY KEY,
+    team_name VARCHAR(255) NOT NULL,
+    schedule_id INT NOT NULL REFERENCES break_thunder_schedules (id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_bt_messages_schedule ON break_thunder_messages (schedule_id);
+CREATE INDEX IF NOT EXISTS idx_bt_messages_team_created ON break_thunder_messages (team_name, created_at);
+
 CREATE TABLE IF NOT EXISTS reactions (
     id SERIAL PRIMARY KEY,
     daily_report_id INT NOT NULL REFERENCES daily_reports (id) ON DELETE CASCADE,

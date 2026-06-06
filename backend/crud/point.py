@@ -118,7 +118,7 @@ async def trigger_event(user_id: int, event_type: str) -> dict:
     """イベント発動"""
     if event_type == "time":
         cost = BT_TIME_COST
-        message = "BTtimeを発動しました！チーム全体が休憩モードになりました"
+        message = "Break Thunderを発動しました！チーム全体が休憩モードになりました"
     else:
         cost = BT_FEVER_COST
         message = "BTfeverを発動しました！チーム全体がお祭りモードになりました"

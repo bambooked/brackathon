@@ -10,3 +10,19 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+@keyframes break-thunder-tab-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-6px);
+  }
+  70% {
+    transform: translateY(2px);
+  }
+}
+
+.animate-break-thunder-tab {
+  animation: break-thunder-tab-bounce 1.35s ease-in-out infinite;
+}

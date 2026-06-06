@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db.config import close_db, init_db
 from routers import auth, points, reports
+from routers.break_thunder import router as break_thunder_router
 from routers.events import router as events_router
 from scheduler import restore_pending_schedules, scheduler
 
@@ -53,6 +54,7 @@ app.include_router(auth.router)
 app.include_router(points.router)
 app.include_router(reports.router)
 app.include_router(events_router)
+app.include_router(break_thunder_router)
 
 
 @app.get("/")

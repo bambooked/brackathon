@@ -73,7 +73,7 @@ class UsersPointsResponse(BaseModel):
 
 
 class BreakThunderRequest(BaseModel):
-    """BTtime 発動リクエスト。scheduled_at 省略時は即時発動。"""
+    """Break Thunder 発動リクエスト。scheduled_at 省略時は即時発動。"""
 
     scheduled_at: datetime | None = None
 
@@ -86,4 +86,4 @@ class TriggerEventResponse(BaseModel):
     points_consumed: int
     transaction: PointTransaction
     user_balance: int
-    scheduled_at: str | None = None  # BTtime のみ。即時発動の場合は None
+    scheduled_at: str | None = None  # Break Thunder のみ。即時発動の場合は None

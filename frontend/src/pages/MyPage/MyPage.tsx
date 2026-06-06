@@ -49,7 +49,8 @@ const REASON_LABEL: Record<string, string> = {
   report_reaction: 'リアクションをもらった',
   invisible_task: '見えない業務を見える化 (AI)',
   present: 'BTプレゼントを送った',
-  bt_time: 'BTtimeを開催',
+  break_thunder: 'Break Thunderを開催',
+  bt_time: 'Break Thunderを開催',
   bt_fever: 'BTfeverを開催',
 }
 

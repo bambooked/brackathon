@@ -6,13 +6,15 @@
 //   /           ホーム (当日日報 + リアクション + アーカイブ)
 //   /post       日報投稿
 //   /invisible  見えない業務の見える化
-//   /shop       BTショップ (プレゼント / BTtime / BTfever)
+//   /break-thunder Break Thunder 掲示板
+//   /shop       BTショップ (プレゼント / Break Thunder / BTfever)
 //   /mypage     マイページ (自分のアーカイブ + ポイント)
 // ============================================================
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import Layout from './components/Layout/Layout'
 import { useAuth } from './contexts/AuthContext'
+import BreakThunderPage from './pages/BreakThunderPage/BreakThunderPage'
 import HomePage from './pages/HomePage/HomePage'
 import InvisibleTaskPage from './pages/InvisibleTaskPage/InvisibleTaskPage'
 import LoginPage from './pages/LoginPage/LoginPage'
@@ -48,6 +50,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/post" element={<PostPage />} />
         <Route path="/invisible" element={<InvisibleTaskPage />} />
+        <Route path="/break-thunder" element={<BreakThunderPage />} />
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/mypage" element={<MyPage />} />
       </Route>

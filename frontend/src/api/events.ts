@@ -1,9 +1,10 @@
 import { API_BASE_URL, getToken } from './client'
 
-export type SSEEventType = 'bt_time' | 'bt_fever'
+export type SSEEventType = 'break_thunder' | 'bt_time' | 'bt_fever'
 
 export interface SSEEvent {
   type: SSEEventType
+  schedule_id?: number
   ends_at: string
 }
 
