@@ -1,0 +1,50 @@
+// ============================================================
+// ルーティング定義 (ページ別)
+// ------------------------------------------------------------
+// 画面一覧:
+//   /login      ログイン
+//   /           ホーム (当日日報 + リアクション + アーカイブ)
+//   /post       日報投稿
+//   /invisible  見えない業務の見える化
+//   /shop       BTショップ (プレゼント / BTtime / BTfever)
+//   /mypage     マイページ (自分のアーカイブ + ポイント)
+// ============================================================
+import { Navigate, Route, Routes } from 'react-router-dom'
+
+import Layout from './components/Layout/Layout'
+import { useAuth } from './contexts/AuthContext'
+import HomePage from './pages/HomePage/HomePage'
+import InvisibleTaskPage from './pages/InvisibleTaskPage/InvisibleTaskPage'
+import LoginPage from './pages/LoginPage/LoginPage'
+import MyPage from './pages/MyPage/MyPage'
+import PostPage from './pages/PostPage/PostPage'
+import ShopPage from './pages/ShopPage/ShopPage'
+
+/** 未ログインなら /login へリダイレクトするガード */
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        element={
+          <RequireAuth>
+            <Layout />
+          </RequireAuth>
+        }
+      >
+        <Route path="/" element={<HomePage />} />
+        <Route path="/post" element={<PostPage />} />
+        <Route path="/invisible" element={<InvisibleTaskPage />} />
+        <Route path="/shop" element={<ShopPage />} />
+        <Route path="/mypage" element={<MyPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
