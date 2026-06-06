@@ -1,50 +1,72 @@
-// ============================================================
-// ポイント / プレゼント / イベント API スタブ
-// 【先輩への受け渡しメモ】
-//   - fetchMyPoints : GET  /points/me        -> number (保有PT)
-//   - fetchTeamPoints: GET /teams/:id/points -> number (チーム合計, BTメーター用)
-//   - sendPresent   : POST /presents         (Present)
-//   - startEvent    : POST /events           (type -> BTEvent)
-// ============================================================
-import type { BTEvent, EventType, Present } from '@/types'
+import type { BTEvent, EventType, PointTransaction, Present } from '@/types'
 
-import { mockDelay } from './client'
+import { request } from './client'
+
+// バックエンドのレスポンス型
+interface BackendTransaction {
+  id: number
+  user_id: number
+  amount: number
+  transaction_type: string
+  source_type: string | null
+  source_id: number | null
+  description: string | null
+  created_at: string
+}
 
 export async function fetchMyPoints(): Promise<number> {
-  // TODO(api): return request<number>('/points/me')
-  await mockDelay()
-  return 12
+  const res = await request<{ balance: number; created_at: string; updated_at: string }>('/points/status')
+  return res.balance
 }
 
-export async function fetchTeamPoints(teamId: string): Promise<number> {
-  // TODO(api): return request<number>(`/teams/${teamId}/points`)
-  await mockDelay()
-  void teamId
-  return 80
+export async function fetchPointHistory(): Promise<PointTransaction[]> {
+  const res = await request<{ transactions: BackendTransaction[]; total_earned: number; total_spent: number }>(
+    '/points/history',
+  )
+  return res.transactions.map((tx) => ({
+    id: String(tx.id),
+    userId: String(tx.user_id),
+    amount: tx.amount,
+    reason: tx.transaction_type as PointTransaction['reason'],
+    createdAt: tx.created_at,
+  }))
 }
 
-export async function sendPresent(toUserId: string, message?: string): Promise<Present> {
-  // TODO(api): return request<Present>('/presents', { method: 'POST', body: JSON.stringify({ toUserId, message }) })
-  await mockDelay()
+export async function sendPresent(toUserId: string, _message?: string): Promise<Present> {
+  const res = await request<{ message: string; sender_transaction: BackendTransaction; sender_balance: number }>(
+    '/points/present',
+    {
+      method: 'POST',
+      body: JSON.stringify({ receiver_id: parseInt(toUserId, 10) }),
+    },
+  )
   return {
-    id: `p-${Date.now()}`,
-    fromUserId: 'u-001',
+    id: String(res.sender_transaction.id),
+    fromUserId: String(res.sender_transaction.user_id),
     toUserId,
-    message,
-    createdAt: new Date().toISOString(),
+    createdAt: res.sender_transaction.created_at,
   }
 }
 
+export async function fetchTeamPoints(_teamId: string): Promise<number> {
+  const res = await request<{ users: { user_id: number; user_name: string; balance: number }[] }>(
+    '/points/users',
+  )
+  return res.users.reduce((sum, u) => sum + u.balance, 0)
+}
+
 export async function startEvent(type: EventType): Promise<BTEvent> {
-  // TODO(api): return request<BTEvent>('/events', { method: 'POST', body: JSON.stringify({ type }) })
-  await mockDelay()
-  const now = new Date()
+  const path = type === 'bt_time' ? '/points/time' : '/points/fever'
+  const res = await request<{ message: string; event_type: string; points_consumed: number; transaction: BackendTransaction; user_balance: number }>(
+    path,
+    { method: 'POST' },
+  )
   return {
-    id: `e-${Date.now()}`,
+    id: String(res.transaction.id),
     type,
-    hostId: 'u-001',
-    startedAt: now.toISOString(),
-    endsAt: new Date(now.getTime() + 15 * 60_000).toISOString(),
+    hostId: String(res.transaction.user_id),
+    startedAt: res.transaction.created_at,
+    endsAt: new Date(Date.now() + 30 * 60_000).toISOString(),
     active: true,
   }
 }

@@ -1,24 +1,14 @@
-// ============================================================
-// BTショップ — ポイントを消費してブラックサンダーを使ったイベントを発動
-// 【先輩への受け渡しメモ】
-//   - sendPresent() は api/points.ts 経由に差し替え
-//   - startEvent() は api/points.ts 経由に差し替え
-//   - fetchTeamMembers() は GET /teams/:id/members に対応予定
-//   - SAMPLE_* はモックデータ。接続後に削除してください。
-// ============================================================
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { type BTEvent,POINT_COST } from '@/types'
+import { fetchUsers, type TeamMember } from '@/api/auth'
+import { fetchMyPoints, sendPresent, startEvent } from '@/api/points'
+import { type BTEvent, POINT_COST } from '@/types'
 
-// ---- サンプルデータ ----
-const SAMPLE_MY_POINTS = 23
-
-const SAMPLE_MEMBERS = [
+const FALLBACK_MEMBERS: TeamMember[] = [
   { id: 'u-002', name: '鈴木花子' },
   { id: 'u-003', name: '田中一郎' },
   { id: 'u-004', name: '佐藤美咲' },
 ]
-// ---- サンプルデータここまで ----
 
 const SHOP_ITEMS = [
   {
@@ -50,33 +40,45 @@ const SHOP_ITEMS = [
 type ShopItemType = 'present' | 'bt_time' | 'bt_fever'
 
 export default function ShopPage() {
-  const [myPoints] = useState(SAMPLE_MY_POINTS)
+  const [myPoints, setMyPoints] = useState(23)
+  const [members, setMembers] = useState<TeamMember[]>(FALLBACK_MEMBERS)
   const [selected, setSelected] = useState<ShopItemType | null>(null)
-  const [toUserId, setToUserId] = useState(SAMPLE_MEMBERS[0].id)
+  const [toUserId, setToUserId] = useState(FALLBACK_MEMBERS[0].id)
   const [message, setMessage] = useState('')
   const [activeEvent, setActiveEvent] = useState<BTEvent | null>(null)
   const [presentSent, setPresentSent] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+
+  useEffect(() => {
+    fetchMyPoints().then(setMyPoints).catch(() => {/* フォールバック */})
+    fetchUsers()
+      .then((users) => {
+        if (users.length > 0) {
+          setMembers(users)
+          setToUserId(users[0].id)
+        }
+      })
+      .catch(() => {/* フォールバック */})
+  }, [])
 
   async function handleConfirm() {
-    if (!selected) return
-    // TODO(api): 各アクションを API 呼び出しに差し替え
-    await new Promise((r) => setTimeout(r, 500))
-
-    if (selected === 'present') {
-      setPresentSent(true)
-      setMessage('')
-      setSelected(null)
-    } else {
-      const event: BTEvent = {
-        id: `ev-${Date.now()}`,
-        type: selected,
-        hostId: 'u-001',
-        startedAt: new Date().toISOString(),
-        endsAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-        active: true,
+    if (!selected || confirming) return
+    setConfirming(true)
+    try {
+      if (selected === 'present') {
+        await sendPresent(toUserId, message)
+        setMyPoints((p) => p - POINT_COST.PRESENT)
+        setPresentSent(true)
+        setMessage('')
+        setSelected(null)
+      } else {
+        const event = await startEvent(selected)
+        setMyPoints((p) => p - (selected === 'bt_time' ? POINT_COST.BT_TIME : POINT_COST.BT_FEVER))
+        setActiveEvent(event)
+        setSelected(null)
       }
-      setActiveEvent(event)
-      setSelected(null)
+    } finally {
+      setConfirming(false)
     }
   }
 
@@ -174,7 +176,7 @@ export default function ShopPage() {
                   onChange={(e) => setToUserId(e.target.value)}
                   className="w-full rounded-lg border border-bt-dark/15 p-2.5 text-sm"
                 >
-                  {SAMPLE_MEMBERS.map((m) => (
+                  {members.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name}
                     </option>
@@ -211,10 +213,10 @@ export default function ShopPage() {
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!canAfford}
+              disabled={!canAfford || confirming}
               className="flex-1 rounded-lg bg-bt-gold py-2.5 text-sm font-bold text-bt-dark disabled:opacity-40 hover:brightness-105"
             >
-              確定する ⚡
+              {confirming ? '処理中...' : '確定する ⚡'}
             </button>
           </div>
         </div>

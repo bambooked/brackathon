@@ -1,27 +1,74 @@
-// ============================================================
-// 認証 API スタブ
-// 【先輩への受け渡しメモ】
-//   - login: POST /auth/login  (LoginInput -> AuthResult)
-//   - Googleアカウント連携を入れる場合はここに addGoogleAuth 等を追加予定。
-//   下記は接続前のモック。TODO(api) を本実装に置換してください。
-// ============================================================
-import type { AuthResult, LoginInput, User } from '@/types'
+import type { AuthResult, User } from '@/types'
 
-import { mockDelay } from './client'
+import { clearToken, request, setToken } from './client'
 
-export async function login(input: LoginInput): Promise<AuthResult> {
-  // TODO(api): return request<AuthResult>('/auth/login', { method: 'POST', body: JSON.stringify(input) })
-  await mockDelay()
-  const mockUser: User = {
-    id: 'u-001',
-    name: 'テスト太郎',
-    email: input.email,
-    teamId: input.teamId,
+// バックエンドのレスポンス型
+interface BackendUser {
+  id: number
+  name: string
+  email: string
+  role: string
+  team_name: string
+  created_at: string
+  updated_at: string
+}
+
+interface GoogleLoginResponse {
+  access_token: string
+  token_type: string
+  user: BackendUser
+}
+
+export interface TeamMember {
+  id: string
+  name: string
+}
+
+function mapUser(u: BackendUser): User {
+  return {
+    id: String(u.id),
+    name: u.name,
+    email: u.email,
+    teamId: u.team_name,
   }
-  return { token: 'mock-token', user: mockUser }
+}
+
+export async function loginWithGoogle(idToken: string): Promise<AuthResult> {
+  const res = await request<GoogleLoginResponse>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ id_token: idToken }),
+  })
+  setToken(res.access_token)
+  return { token: res.access_token, user: mapUser(res.user) }
 }
 
 export async function logout(): Promise<void> {
-  // TODO(api): return request('/auth/logout', { method: 'POST' })
-  await mockDelay(100)
+  clearToken()
+}
+
+export async function getCurrentUser(): Promise<User> {
+  const res = await request<BackendUser>('/auth/me')
+  return mapUser(res)
+}
+
+export async function fetchUsers(): Promise<TeamMember[]> {
+  const res = await request<{
+    users: { id: number; name: string; nickname: string | null; use_nickname: boolean; team_name: string }[]
+  }>('/auth/users')
+  return res.users.map((u) => ({
+    id: String(u.id),
+    name: u.use_nickname && u.nickname ? u.nickname : u.name,
+  }))
+}
+
+export async function updateProfile(data: {
+  name?: string
+  nickname?: string
+  use_nickname?: boolean
+}): Promise<User> {
+  const res = await request<BackendUser>('/auth/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+  return mapUser(res)
 }

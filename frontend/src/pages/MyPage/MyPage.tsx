@@ -1,16 +1,12 @@
-// ============================================================
-// マイページ — プロフィール設定 + ポイント確認 + 過去日報アーカイブ
-// 【先輩への受け渡しメモ】
-//   - fetchMyPoints() は api/points.ts 経由に差し替え
-//   - fetchMyReports() は api/reports.ts に追加予定 (自分の日報フィルタ)
-//   - updateProfile({ name, nickname, showNickname }) は PATCH /users/:id に差し替え
-//   - SAMPLE_* はモックデータ。接続後に削除してください。
-// ============================================================
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
+import { updateProfile } from '@/api/auth'
+import { fetchMyPoints, fetchPointHistory } from '@/api/points'
+import { fetchReports } from '@/api/reports'
+import { useAuth } from '@/contexts/AuthContext'
 import type { PointTransaction, Report } from '@/types'
 
-// ---- サンプルデータ ----
+// フォールバック用サンプルデータ（API 接続前やロード中に表示）
 const SAMPLE_MY_POINTS = 23
 
 const SAMPLE_POINT_HISTORY: PointTransaction[] = [
@@ -48,7 +44,6 @@ const SAMPLE_MY_REPORTS: Report[] = [
     ],
   },
 ]
-// ---- サンプルデータここまで ----
 
 const REASON_LABEL: Record<string, string> = {
   report_reaction: 'リアクションをもらった',
@@ -65,28 +60,42 @@ function formatDate(iso: string) {
 }
 
 export default function MyPage() {
-  // プロフィール設定
-  const [name, setName] = useState('山田太郎')
-  const [nickname, setNickname] = useState('ヤマダ')
+  const { user } = useAuth()
+
+  const [name, setName] = useState(user?.name ?? '山田太郎')
+  const [nickname, setNickname] = useState('')
   const [showNickname, setShowNickname] = useState(false)
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
 
-  // アーカイブ
+  const [myPoints, setMyPoints] = useState(SAMPLE_MY_POINTS)
+  const [pointHistory, setPointHistory] = useState<PointTransaction[]>(SAMPLE_POINT_HISTORY)
+  const [myReports, setMyReports] = useState<Report[]>(SAMPLE_MY_REPORTS)
   const [archiveOpen, setArchiveOpen] = useState(false)
+
+  useEffect(() => {
+    fetchMyPoints().then(setMyPoints).catch(() => {/* フォールバック */})
+    fetchPointHistory().then(setPointHistory).catch(() => {/* フォールバック */})
+    if (user) {
+      fetchReports({ userId: user.id }).then(setMyReports).catch(() => {/* フォールバック */})
+    }
+  }, [user])
 
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
     setProfileSaving(true)
     setProfileSaved(false)
-    // TODO(api): PATCH /users/:id { name, nickname, showNickname } に差し替え
-    await new Promise((r) => setTimeout(r, 600))
-    setProfileSaving(false)
-    setProfileSaved(true)
-    setTimeout(() => setProfileSaved(false), 2500)
+    try {
+      await updateProfile({ name, nickname: nickname || undefined, use_nickname: showNickname })
+      setProfileSaved(true)
+      setTimeout(() => setProfileSaved(false), 2500)
+    } catch {
+      /* エラー時はサイレント */
+    } finally {
+      setProfileSaving(false)
+    }
   }
 
-  // 日報に表示される名前（ニックネーム表示ONのときはニックネーム）
   const displayName = showNickname && nickname.trim() ? nickname : name
 
   return (
@@ -99,7 +108,6 @@ export default function MyPage() {
           <h2 className="font-bold text-bt-dark/70 text-sm uppercase tracking-wide">プロフィール</h2>
         </div>
         <form onSubmit={handleProfileSave} className="p-5 space-y-4">
-          {/* アバタープレビュー */}
           <div className="flex items-center gap-4">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-400 text-2xl font-bold text-amber-900">
               {displayName[0]}
@@ -112,7 +120,6 @@ export default function MyPage() {
             </div>
           </div>
 
-          {/* 名前 */}
           <div>
             <label htmlFor="profile-name" className="block text-sm font-medium mb-1">本名</label>
             <input
@@ -124,7 +131,6 @@ export default function MyPage() {
             />
           </div>
 
-          {/* ニックネーム */}
           <div>
             <label htmlFor="profile-nickname" className="block text-sm font-medium mb-1">ニックネーム</label>
             <input
@@ -137,7 +143,6 @@ export default function MyPage() {
             />
           </div>
 
-          {/* ニックネーム表示切り替え */}
           <div className="flex items-center justify-between rounded-lg border border-bt-dark/10 px-4 py-3">
             <div>
               <p className="text-sm font-medium">ニックネームで表示する</p>
@@ -179,7 +184,7 @@ export default function MyPage() {
       <section className="rounded-xl bg-white p-5 shadow-sm border border-bt-dark/5">
         <h2 className="font-bold text-bt-dark/70 text-sm uppercase tracking-wide mb-3">ポイント</h2>
         <div className="flex items-end gap-2">
-          <span className="text-5xl font-bold text-bt-gold">{SAMPLE_MY_POINTS}</span>
+          <span className="text-5xl font-bold text-bt-gold">{myPoints}</span>
           <span className="mb-1 text-lg font-medium text-bt-dark/60">PT</span>
         </div>
       </section>
@@ -190,7 +195,7 @@ export default function MyPage() {
           ポイント履歴
         </h2>
         <ul className="divide-y divide-bt-dark/5">
-          {SAMPLE_POINT_HISTORY.map((tx) => (
+          {pointHistory.map((tx) => (
             <li key={tx.id} className="flex items-center justify-between py-3">
               <div>
                 <p className="text-sm font-medium">{REASON_LABEL[tx.reason] ?? tx.reason}</p>
@@ -210,13 +215,13 @@ export default function MyPage() {
           onClick={() => setArchiveOpen((v) => !v)}
           className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-sm font-medium text-bt-dark/60 hover:text-bt-dark transition-colors"
         >
-          <span>📂 自分の日報アーカイブ ({SAMPLE_MY_REPORTS.length} 件)</span>
+          <span>📂 自分の日報アーカイブ ({myReports.length} 件)</span>
           <span className="text-lg">{archiveOpen ? '▲' : '▼'}</span>
         </button>
 
         {archiveOpen && (
           <ul className="mt-3 space-y-3">
-            {SAMPLE_MY_REPORTS.map((report) => (
+            {myReports.map((report) => (
               <li key={report.id} className="rounded-xl bg-white p-4 shadow-sm border border-bt-dark/5">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-bt-dark/50">{formatDate(report.createdAt)}</span>

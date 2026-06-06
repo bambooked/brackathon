@@ -66,6 +66,8 @@ export interface Reaction {
 
 export interface NewReportInput {
   content: string
+  reportedAt?: string // datetime-local "YYYY-MM-DDThh:mm"
+  title?: string
 }
 
 // ---- BTプレゼント ----

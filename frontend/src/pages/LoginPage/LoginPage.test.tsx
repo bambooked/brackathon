@@ -1,27 +1,21 @@
-// ============================================================
-// LoginPage のテスト (TDD の見本)
-// ------------------------------------------------------------
-// TDD の進め方:
-//   1. このテストを先に書く (この時点では LoginPage 未実装で red)
-//   2. テストが通る最小限の実装を書く (green)
-//   3. リファクタする (refactor)
-// ============================================================
-import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach,describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import * as authApi from '@/api/auth'
 import { AuthProvider } from '@/contexts/AuthContext'
 
 import LoginPage from './LoginPage'
 
-// react-router の useNavigate をスパイ化
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>()
   return { ...actual, useNavigate: () => mockNavigate }
 })
+
+// Google Identity Services はブラウザ外では動作しないためスタブ化
+vi.mock('@/api/auth', () => ({
+  loginWithGoogle: vi.fn(),
+}))
 
 function renderLogin() {
   return render(
@@ -38,32 +32,18 @@ describe('LoginPage', () => {
     mockNavigate.mockClear()
   })
 
-  it('入力フォームを表示する', () => {
+  it('ログインページのタイトルを表示する', () => {
     renderLogin()
-    expect(screen.getByLabelText('チームID')).toBeInTheDocument()
-    expect(screen.getByLabelText('メールアドレス')).toBeInTheDocument()
-    expect(screen.getByLabelText('パスワード')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'ログイン' })).toBeInTheDocument()
+    expect(screen.getByText('⚡ BT ログイン')).toBeInTheDocument()
   })
 
-  it('送信すると login API を呼び、成功後にトップへ遷移する', async () => {
-    const loginSpy = vi.spyOn(authApi, 'login')
-    const user = userEvent.setup()
+  it('Googleログインの説明文を表示する', () => {
     renderLogin()
+    expect(screen.getByText('Googleアカウントでログインしてください')).toBeInTheDocument()
+  })
 
-    await user.type(screen.getByLabelText('チームID'), 'team-1')
-    await user.type(screen.getByLabelText('メールアドレス'), 'a@example.com')
-    await user.type(screen.getByLabelText('パスワード'), 'pw')
-    await user.click(screen.getByRole('button', { name: 'ログイン' }))
-
-    expect(loginSpy).toHaveBeenCalledWith({
-      teamId: 'team-1',
-      email: 'a@example.com',
-      password: 'pw',
-    })
-    // login は非同期。成功後トップ ("/") に遷移するまで待つ
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true })
-    })
+  it('Googleログインボタンの領域を表示する', () => {
+    renderLogin()
+    expect(screen.getByLabelText('Googleでログイン')).toBeInTheDocument()
   })
 })

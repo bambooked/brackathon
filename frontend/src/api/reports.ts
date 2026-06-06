@@ -1,48 +1,124 @@
-// ============================================================
-// 日報 API スタブ
-// 【先輩への受け渡しメモ】
-//   - fetchReports: GET  /reports
-//   - createReport: POST /reports        (NewReportInput -> Report)
-//   - addReaction : POST /reports/:id/reactions  ({emoji} -> Reaction)
-//     ※ リアクション時は自分と相手の双方にポイント付与 (バック側で処理想定)
-// ============================================================
 import type { NewReportInput, Reaction, Report } from '@/types'
 
-import { mockDelay } from './client'
+import { request } from './client'
 
-const mockReports: Report[] = [
-  {
-    id: 'r-001',
-    authorId: 'u-002',
-    authorName: 'ユーザーA',
-    content: 'スライド作成完了しました！',
-    createdAt: '2026-06-06T09:00:00+09:00',
-    reactions: [{ id: 'rx-1', userId: 'u-001', emoji: '⚡' }],
-  },
-]
+// バックエンドのレスポンス型
+interface BackendUser {
+  id: number
+  name: string
+  email: string
+  role: string
+  team_name: string
+}
 
-export async function fetchReports(): Promise<Report[]> {
-  // TODO(api): return request<Report[]>('/reports')
-  await mockDelay()
-  return mockReports
+interface BackendReaction {
+  id: number
+  daily_report_id: number
+  user_id: number
+  type: string
+  created_at: string
+}
+
+interface BackendReport {
+  id: number
+  user_id: number
+  user: BackendUser
+  report_date: string
+  title: string | null
+  body: string
+  reactions: BackendReaction[]
+  created_at: string
+  updated_at: string
+}
+
+function mapReport(r: BackendReport): Report {
+  return {
+    id: String(r.id),
+    authorId: String(r.user_id),
+    authorName: r.user.name,
+    content: r.body,
+    createdAt: r.created_at,
+    reactions: r.reactions.map((rx) => ({
+      id: String(rx.id),
+      userId: String(rx.user_id),
+      emoji: rx.type,
+    })),
+  }
+}
+
+function todayString(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+export async function fetchReports(params?: {
+  date?: string
+  userId?: string
+}): Promise<Report[]> {
+  const qs = new URLSearchParams()
+  if (params?.date) qs.set('report_date', params.date)
+  if (params?.userId) qs.set('user_id', params.userId)
+  const query = qs.size > 0 ? `?${qs.toString()}` : ''
+  const res = await request<{ reports: BackendReport[] }>(`/reports${query}`)
+  return res.reports.map(mapReport)
+}
+
+export async function fetchAllReports(): Promise<Report[]> {
+  const res = await request<{ reports: BackendReport[] }>('/reports/all')
+  return res.reports.map(mapReport)
+}
+
+export async function fetchMyTodayReport(userId: string): Promise<Report | null> {
+  const reports = await fetchReports({ date: todayString(), userId })
+  return reports[0] ?? null
 }
 
 export async function createReport(input: NewReportInput): Promise<Report> {
-  // TODO(api): return request<Report>('/reports', { method: 'POST', body: JSON.stringify(input) })
-  await mockDelay()
+  const reportDate = input.reportedAt ? input.reportedAt.slice(0, 10) : todayString()
+  const res = await request<BackendReport & { points_awarded: number }>('/reports', {
+    method: 'POST',
+    body: JSON.stringify({
+      report_date: reportDate,
+      title: input.title ?? null,
+      body: input.content,
+    }),
+  })
+  return mapReport(res)
+}
+
+export async function updateReport(
+  reportId: string,
+  input: { content?: string; title?: string },
+): Promise<Report> {
+  const res = await request<{ id: number; user_id: number; report_date: string; title: string | null; body: string; created_at: string; updated_at: string }>(
+    `/reports/${reportId}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ title: input.title ?? null, body: input.content ?? null }),
+    },
+  )
   return {
-    id: `r-${Date.now()}`,
-    authorId: 'u-001',
-    authorName: 'テスト太郎',
-    content: input.content,
-    createdAt: new Date().toISOString(),
+    id: String(res.id),
+    authorId: String(res.user_id),
+    authorName: '',
+    content: res.body,
+    createdAt: res.created_at,
     reactions: [],
   }
 }
 
 export async function addReaction(reportId: string, emoji: string): Promise<Reaction> {
-  // TODO(api): return request<Reaction>(`/reports/${reportId}/reactions`, { method: 'POST', body: JSON.stringify({ emoji }) })
-  await mockDelay(150)
-  void reportId // スタブのため未使用 (接続時に上記 request で使用)
-  return { id: `rx-${Date.now()}`, userId: 'u-001', emoji }
+  const res = await request<{ reaction: BackendReaction; my_new_balance: number; message: string }>(
+    `/reports/${reportId}/react`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ type: emoji }),
+    },
+  )
+  return {
+    id: String(res.reaction.id),
+    userId: String(res.reaction.user_id),
+    emoji: res.reaction.type,
+  }
 }

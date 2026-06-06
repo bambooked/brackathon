@@ -1,20 +1,12 @@
-// ============================================================
-// 投稿画面 — 日報を新規投稿 / 当日分を修正
-// 【先輩への受け渡しメモ】
-//   - fetchTodayMyReport()  → GET /reports?authorId=me&date=today
-//   - createReport()        → POST /reports { content, reportedAt }
-//   - updateReport(id, ...) → PATCH /reports/:id { content, reportedAt }
-//   - 投稿/更新成功後は / (ホーム) へリダイレクト
-// ============================================================
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { createReport, fetchMyTodayReport, updateReport } from '@/api/reports'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Report } from '@/types'
 
 const MAX_LENGTH = 500
 
-/** "YYYY-MM-DDThh:mm" 形式で現在日時を返す（datetime-local の初期値用） */
 function nowLocalString() {
   const d = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -27,34 +19,34 @@ function toDatetimeLocal(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-// ---- サンプルデータ（今日すでに投稿済みのケース） ----
-// TODO(api): fetchTodayMyReport() に差し替え。未投稿なら null を返す。
-const SAMPLE_TODAY_MY_REPORT: Report | null = {
-  id: 'r-my-today',
-  authorId: 'u-001',
-  authorName: '山田太郎',
-  content:
-    'フロントのコンポーネント設計をまとめた。Atomic Designで整理する方向で進めることにした。明日チームに共有予定。',
-  createdAt: '2026-06-06T09:30:00+09:00',
-  reactions: [],
-}
-// null にすると新規投稿モードで確認できます
-// ---- サンプルデータここまで ----
-
 export default function PostPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  // 遅延初期化: マウント時に一度だけ既存投稿を取得
-  // TODO(api): () => fetchTodayMyReport() (async の場合は Suspense or loading state で対応)
-  const [existingReport] = useState<Report | null>(() => SAMPLE_TODAY_MY_REPORT)
-  const [reportedAt, setReportedAt] = useState(() =>
-    existingReport ? toDatetimeLocal(existingReport.createdAt) : nowLocalString(),
-  )
-  const [content, setContent] = useState(() => existingReport?.content ?? '')
+  const [existingReport, setExistingReport] = useState<Report | null>(null)
+  const [reportedAt, setReportedAt] = useState(nowLocalString)
+  const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    fetchMyTodayReport(user.id)
+      .then((report) => {
+        setExistingReport(report)
+        if (report) {
+          setContent(report.content)
+          setReportedAt(toDatetimeLocal(report.createdAt))
+        }
+      })
+      .catch(() => {/* ログイン前など */})
+      .finally(() => setLoading(false))
+  }, [user])
 
   const isEditMode = existingReport !== null
 
@@ -64,17 +56,23 @@ export default function PostPage() {
     setSubmitting(true)
     try {
       if (isEditMode) {
-        // TODO(api): await updateReport(existingReport.id, { content, reportedAt }) に差し替え
-        await new Promise((r) => setTimeout(r, 500))
+        await updateReport(existingReport.id, { content })
       } else {
-        // TODO(api): await createReport({ content, reportedAt }) に差し替え
-        await new Promise((r) => setTimeout(r, 500))
+        await createReport({ content, reportedAt })
       }
       setSubmitted(true)
       setTimeout(() => navigate('/'), 1200)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <span className="text-bt-dark/30">読み込み中...</span>
+      </div>
+    )
   }
 
   if (submitted) {
@@ -89,7 +87,6 @@ export default function PostPage() {
     )
   }
 
-  // 投稿済みで編集モードに入っていない場合は確認画面を表示
   if (isEditMode && !isEditing) {
     return (
       <div className="space-y-6">
@@ -139,7 +136,6 @@ export default function PostPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 日時 */}
         <div className="rounded-xl bg-white shadow-sm border border-bt-dark/5 px-5 py-4">
           <label htmlFor="post-datetime" className="block text-sm font-medium mb-2 text-bt-dark/70">📅 日時</label>
           <input
@@ -157,7 +153,6 @@ export default function PostPage() {
           )}
         </div>
 
-        {/* 本文 */}
         <div className="rounded-xl bg-white shadow-sm border border-bt-dark/5 overflow-hidden">
           <label htmlFor="post-content" className="block px-5 pt-4 text-sm font-medium text-bt-dark/70">📝 内容</label>
           <textarea

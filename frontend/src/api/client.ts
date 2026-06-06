@@ -1,17 +1,6 @@
-// ============================================================
-// API クライアント基盤
-// ------------------------------------------------------------
-// 【先輩への受け渡しメモ】
-// 実際の fetch 処理はここに集約します。現状は未接続のため、
-// 各 api/*.ts はモックデータを返すスタブになっています。
-// 接続時は下記 request() を本実装に差し替え、各スタブの
-// TODO(api) コメント箇所を request() 呼び出しに置き換えてください。
-//
-// ベースURL は Vite の環境変数で切替を想定 (.env: VITE_API_BASE_URL)。
-// 開発時は vite.config.ts の proxy 経由 ("/api") でも可。
-// ============================================================
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+const TOKEN_KEY = 'bt_token'
 
 export class ApiError extends Error {
   constructor(
@@ -23,13 +12,25 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * 共通 fetch ラッパ。
- * TODO(api): 認証トークンを Authorization ヘッダに載せる処理を追加。
- */
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken()
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...init,
   })
   if (!res.ok) {
@@ -37,6 +38,3 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return res.json() as Promise<T>
 }
-
-/** スタブ用: ネットワーク遅延を模擬 */
-export const mockDelay = (ms = 300) => new Promise((r) => setTimeout(r, ms))

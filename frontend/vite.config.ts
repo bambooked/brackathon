@@ -20,9 +20,9 @@ export default defineConfig({
     // 【先輩への受け渡しメモ】
     // バックエンド(FastAPI, :8000)への接続はここで proxy を張ると
     // CORS を避けられます。接続担当の方が必要に応じて有効化してください。
-    // proxy: {
-    //   '/api': { target: 'http://backend:8000', changeOrigin: true },
-    // },
+    proxy: {
+      '/api': { target: 'http://backend:8000', changeOrigin: true },
+    },
     // ───────────────────────────────────────────────
   },
   test: {
