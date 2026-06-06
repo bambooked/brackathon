@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 import crud.point as point_crud
 from schemas.point import (
+    ActiveEventResponse,
     PointHistoryResponse,
     PointsStatusResponse,
     PointTransaction,
@@ -11,6 +12,7 @@ from schemas.point import (
     UserPointSummary,
     UsersPointsResponse,
 )
+from state.events import get_event, set_event
 from utils.dependencies import CurrentUser, get_current_user
 
 router = APIRouter(prefix="/api/v1/points", tags=["ポイント・手渡し"])
@@ -25,7 +27,7 @@ async def present_bt(
     - 送信者のみ固定10ポイント消費
     - 受信者はリアルBTを受け取るだけでアプリ内ポイントは増減なし
     - point_transactions には送信者のマイナス履歴1件のみ記録
-    - 同じチームのユーザーにのみ送信可能
+    - 同じチームのユーザーにのみ送信可能（自分自身へは送付不可）
     """
     try:
         result = await point_crud.present_bt(
@@ -35,7 +37,7 @@ async def present_bt(
         )
     except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
 
@@ -72,12 +74,17 @@ async def trigger_bt_time(current_user: CurrentUser = Depends(get_current_user))
     """
     BTtime（休憩）を発動
     - 自分のポイントを50ポイント消費
-    - 同じチーム全体をBTtime状態にする
+    - 同じチーム全体をBTtime状態にする（30分間）
     """
-    result = await point_crud.trigger_event(
-        user_id=current_user.user_id,
-        event_type="time",
-    )
+    try:
+        result = await point_crud.trigger_event(
+            user_id=current_user.user_id,
+            event_type="time",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    set_event(current_user.team_name, "time")
 
     return TriggerEventResponse(
         message=result["message"],
@@ -93,12 +100,17 @@ async def trigger_bt_fever(current_user: CurrentUser = Depends(get_current_user)
     """
     BTfever（お祭り）を発動
     - 自分のポイントを150ポイント消費
-    - 同じチーム全体をBTfever状態にする
+    - 同じチーム全体をBTfever状態にする（60分間）
     """
-    result = await point_crud.trigger_event(
-        user_id=current_user.user_id,
-        event_type="fever",
-    )
+    try:
+        result = await point_crud.trigger_event(
+            user_id=current_user.user_id,
+            event_type="fever",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    set_event(current_user.team_name, "fever")
 
     return TriggerEventResponse(
         message=result["message"],
@@ -107,6 +119,18 @@ async def trigger_bt_fever(current_user: CurrentUser = Depends(get_current_user)
         transaction=PointTransaction(**result["transaction"]),
         user_balance=result["user_balance"],
     )
+
+
+@router.get("/event", response_model=ActiveEventResponse)
+async def get_active_event(current_user: CurrentUser = Depends(get_current_user)):
+    """
+    現在のアクティブイベントを取得
+    - 期間が終了していれば active: false を返す
+    """
+    event = get_event(current_user.team_name)
+    if event is None:
+        return ActiveEventResponse(active=False)
+    return ActiveEventResponse(**event)
 
 
 @router.get("/history", response_model=PointHistoryResponse)

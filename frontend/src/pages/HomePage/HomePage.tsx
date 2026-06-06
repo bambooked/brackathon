@@ -1,14 +1,7 @@
-// ============================================================
-// ホーム画面
-//   「日報」タブ    — 今日の日報 + 全期間アーカイブ(年月ナビ + 日付チップ)
-//   「人で探す」タブ — メンバー選択 → パーソンビュー(今日/全期間)
-// 【先輩への受け渡しメモ】
-//   - fetchReports() / addReaction() は api/reports.ts 経由に差し替え
-//   - fetchReportsByAuthor(authorId) は api/reports.ts に追加予定
-//   - SAMPLE_* 定数はモックデータ。接続後に削除してください。
-// ============================================================
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
+import { addReaction, fetchAllReports, fetchReports } from '@/api/reports'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Report } from '@/types'
 
 const REACTION_EMOJIS = ['⚡', '👍', '🔥', '🙏']
@@ -26,57 +19,11 @@ function avatarColor(id: string) {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length]
 }
 
-// ---- サンプルデータ ----
-const TODAY = '2026-06-06'
-
-const SAMPLE_TODAY_REPORTS: Report[] = [
-  {
-    id: 'r-001', authorId: 'u-002', authorName: '鈴木花子',
-    content: '今日はログイン画面のリファクタリングを進めました。バリデーション周りを整理して、エラーメッセージをわかりやすくしました。明日はテストを追加する予定です。',
-    createdAt: `${TODAY}T09:45:00+09:00`,
-    reactions: [
-      { id: 'rx-001', userId: 'u-001', emoji: '👍' },
-      { id: 'rx-002', userId: 'u-003', emoji: '⚡' },
-    ],
-  },
-  {
-    id: 'r-002', authorId: 'u-003', authorName: '田中一郎',
-    content: 'バックエンドのDB設計レビューに参加しました。インデックス周りで議論があり、最終的にcomposite indexを追加する方針になりました。ドキュメントも更新済みです。',
-    createdAt: `${TODAY}T11:20:00+09:00`,
-    reactions: [{ id: 'rx-003', userId: 'u-002', emoji: '🙏' }],
-  },
-  {
-    id: 'r-003', authorId: 'u-004', authorName: '佐藤美咲',
-    content: 'チームMTGの議事録をまとめました。来週のスプリント計画も共有済み。先週積み残しになっていたCSRF対策の実装も完了しました！',
-    createdAt: `${TODAY}T14:05:00+09:00`,
-    reactions: [],
-  },
-]
-
-const SAMPLE_ARCHIVE_REPORTS: Report[] = [
-  // 6/5
-  { id: 'r-010', authorId: 'u-002', authorName: '鈴木花子', content: '認証フローの設計をチームでレビュー。JWT vs セッションで議論。来週中に実装方針決定予定。', createdAt: '2026-06-05T10:00:00+09:00', reactions: [{ id: 'rx-010', userId: 'u-001', emoji: '⚡' }] },
-  { id: 'r-011', authorId: 'u-003', authorName: '田中一郎', content: 'APIエンドポイントの整理とSwaggerドキュメント更新。/v1プレフィックス統一が完了しました。', createdAt: '2026-06-05T15:30:00+09:00', reactions: [{ id: 'rx-012', userId: 'u-002', emoji: '🔥' }] },
-  { id: 'r-014', authorId: 'u-001', authorName: '山田太郎', content: 'Vitestのカバレッジ設定を整えた。カバレッジ70%超え達成。Dockerfileをマルチステージビルドに変更した。', createdAt: '2026-06-05T17:00:00+09:00', reactions: [{ id: 'rx-017', userId: 'u-003', emoji: '⚡' }] },
-  // 6/4
-  { id: 'r-012', authorId: 'u-001', authorName: '山田太郎', content: 'フロントのコンポーネント設計をまとめた。Atomic Designで整理する方向で進めることにした。明日チームに共有予定。', createdAt: '2026-06-04T17:00:00+09:00', reactions: [{ id: 'rx-013', userId: 'u-003', emoji: '👍' }, { id: 'rx-014', userId: 'u-004', emoji: '⚡' }] },
-  { id: 'r-013', authorId: 'u-004', authorName: '佐藤美咲', content: 'E2Eテスト環境をPlaywrightで構築。基本的なログインフローのテストが通るようになった。', createdAt: '2026-06-04T14:30:00+09:00', reactions: [{ id: 'rx-016', userId: 'u-001', emoji: '⚡' }] },
-  // 6/3
-  { id: 'r-020', authorId: 'u-002', authorName: '鈴木花子', content: 'スプリントレビューの準備。デモ環境のセットアップに手間取ったけど完了。明日のレビューに間に合った。', createdAt: '2026-06-03T16:00:00+09:00', reactions: [{ id: 'rx-020', userId: 'u-001', emoji: '🙏' }] },
-  { id: 'r-021', authorId: 'u-003', authorName: '田中一郎', content: 'パフォーマンス改善に着手。N+1クエリを3箇所修正してAPIレスポンスが約40%改善した。', createdAt: '2026-06-03T18:00:00+09:00', reactions: [{ id: 'rx-022', userId: 'u-004', emoji: '⚡' }] },
-  // 5/30
-  { id: 'r-030', authorId: 'u-002', authorName: '鈴木花子', content: '5月末のリリース対応。ホットフィックスを2件マージしてデプロイ完了。本番環境での動作を確認した。', createdAt: '2026-05-30T19:00:00+09:00', reactions: [{ id: 'rx-030', userId: 'u-001', emoji: '🔥' }] },
-  { id: 'r-031', authorId: 'u-004', authorName: '佐藤美咲', content: '5月の振り返りドキュメントを作成。来月のOKR案も一緒にまとめてチームに共有した。', createdAt: '2026-05-29T17:00:00+09:00', reactions: [{ id: 'rx-031', userId: 'u-003', emoji: '👍' }] },
-  { id: 'r-032', authorId: 'u-001', authorName: '山田太郎', content: 'フロント側のバンドルサイズを最適化。動的インポート導入でLCP改善。Lighthouseスコアが85→94になった。', createdAt: '2026-05-28T15:00:00+09:00', reactions: [{ id: 'rx-032', userId: 'u-002', emoji: '⚡' }] },
-]
-// ---- サンプルデータここまで ----
-
-const ALL_REPORTS = [...SAMPLE_TODAY_REPORTS, ...SAMPLE_ARCHIVE_REPORTS]
-
-// 全チームメンバー（パーソン選択画面用）
-const ALL_AUTHORS = Array.from(
-  new Map(ALL_REPORTS.map((r) => [r.authorId, r.authorName])).entries()
-).map(([id, name]) => ({ id, name }))
+function todayString(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
 
 function dateKey(iso: string) { return iso.slice(0, 10) }
 function monthKey(iso: string) { return iso.slice(0, 7) }
@@ -97,42 +44,35 @@ function formatMonthLabel(ym: string) {
   return `${y}年${parseInt(m)}月`
 }
 
-/** 最古のアーカイブ月〜今月の全月リストを降順で生成 */
-function buildAllMonths(): string[] {
-  const archiveMonths = SAMPLE_ARCHIVE_REPORTS.map((r) => monthKey(r.createdAt))
-  const earliest = [...archiveMonths].sort()[0] // "2026-05" など
-  const todayMonth = monthKey(`${TODAY}T00:00:00+09:00`)
-  const months: string[] = []
+function buildMonths(reports: Report[], today: string): string[] {
+  if (reports.length === 0) return [today.slice(0, 7)]
+  const months = reports.map((r) => monthKey(r.createdAt))
+  const earliest = [...months].sort()[0]
+  const todayMonth = today.slice(0, 7)
+  const result: string[] = []
   let cur = todayMonth
   while (cur >= earliest) {
-    months.push(cur)
+    result.push(cur)
     const [y, m] = cur.split('-').map(Number)
     cur = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`
   }
-  return months
+  return result
 }
-
-/** その月のアーカイブ日付リスト（降順）と件数 */
-function getMonthData(ym: string) {
-  const reports = SAMPLE_ARCHIVE_REPORTS.filter((r) => monthKey(r.createdAt) === ym)
-  const dates = Array.from(new Set(reports.map((r) => dateKey(r.createdAt)))).sort((a, b) => b.localeCompare(a))
-  return { dates, count: reports.length }
-}
-
-const ALL_MONTHS = buildAllMonths()
 
 type TopTab = 'feed' | 'person'
 type PersonTab = 'today' | 'all'
 
 interface ReportCardProps {
   report: Report
+  currentUserId: string | undefined
   onReact: (reportId: string, emoji: string) => void
   onSelectAuthor?: (authorId: string, authorName: string) => void
   showDate?: boolean
 }
 
-function ReportCard({ report, onReact, onSelectAuthor, showDate = false }: ReportCardProps) {
+function ReportCard({ report, currentUserId, onReact, onSelectAuthor, showDate = false }: ReportCardProps) {
   const color = avatarColor(report.authorId)
+  const isOwn = report.authorId === currentUserId
   return (
     <li className="rounded-xl bg-white shadow-sm border border-bt-dark/5 overflow-hidden">
       <div className="flex items-center gap-3 px-5 py-4 border-b border-bt-dark/5 bg-bt-dark/[0.02]">
@@ -163,12 +103,18 @@ function ReportCard({ report, onReact, onSelectAuthor, showDate = false }: Repor
       <div className="flex items-center gap-2 flex-wrap px-5 pb-4">
         {REACTION_EMOJIS.map((emoji) => {
           const count = report.reactions.filter((r) => r.emoji === emoji).length
+          const reacted = report.reactions.some((r) => r.emoji === emoji && r.userId === currentUserId)
           return (
             <button
               key={emoji}
               onClick={() => onReact(report.id, emoji)}
+              disabled={isOwn}
+              title={isOwn ? '自分の日報にはリアクションできません' : undefined}
               className={`flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors
-                ${count > 0 ? 'border-bt-gold bg-bt-gold/10 font-semibold' : 'border-bt-dark/15 hover:border-bt-gold hover:bg-bt-gold/5'}`}
+                ${isOwn ? 'opacity-40 cursor-not-allowed border-bt-dark/10' :
+                  reacted ? 'border-bt-gold bg-bt-gold/20 font-semibold' :
+                  count > 0 ? 'border-bt-gold bg-bt-gold/10 font-semibold' :
+                  'border-bt-dark/15 hover:border-bt-gold hover:bg-bt-gold/5'}`}
             >
               {emoji}
               {count > 0 && <span className="text-xs font-bold">{count}</span>}
@@ -181,44 +127,80 @@ function ReportCard({ report, onReact, onSelectAuthor, showDate = false }: Repor
 }
 
 export default function HomePage() {
-  const [topTab, setTopTab] = useState<TopTab>('feed')
-  const [todayReports, setTodayReports] = useState<Report[]>(SAMPLE_TODAY_REPORTS)
+  const { user } = useAuth()
+  const TODAY = todayString()
 
-  // パーソンビュー
+  const [topTab, setTopTab] = useState<TopTab>('feed')
+  const [todayReports, setTodayReports] = useState<Report[]>([])
+  const [archiveReports, setArchiveReports] = useState<Report[]>([])
+  const [loading, setLoading] = useState(true)
+
   const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null)
   const [selectedAuthorName, setSelectedAuthorName] = useState<string | null>(null)
   const [personTab, setPersonTab] = useState<PersonTab>('today')
 
-  // アーカイブ
-  const [selectedMonth, setSelectedMonth] = useState(ALL_MONTHS[0])
+  const [selectedMonth, setSelectedMonth] = useState<string>(TODAY.slice(0, 7))
   const [selectedArchiveDate, setSelectedArchiveDate] = useState<string | null>(null)
 
-  const currentMonthIdx = ALL_MONTHS.indexOf(selectedMonth)
-  const { dates: archiveDatesOfMonth, count: monthCount } = useMemo(
-    () => getMonthData(selectedMonth),
-    [selectedMonth],
-  )
+  useEffect(() => {
+    Promise.all([
+      fetchReports({ date: TODAY }),
+      fetchAllReports(),
+    ])
+      .then(([today, all]) => {
+        setTodayReports(today)
+        // all には今日含む全件が返るので今日分を除いてアーカイブとする
+        setArchiveReports(all.filter((r) => dateKey(r.createdAt) !== TODAY))
+      })
+      .catch(() => {/* エラー時は空のまま */})
+      .finally(() => setLoading(false))
+  }, [TODAY])
+
+  const allMonths = useMemo(() => buildMonths(archiveReports, TODAY), [archiveReports, TODAY])
+
+  const currentMonthIdx = allMonths.indexOf(selectedMonth)
+
+  const archiveDatesOfMonth = useMemo(() => {
+    const dates = Array.from(new Set(
+      archiveReports
+        .filter((r) => monthKey(r.createdAt) === selectedMonth)
+        .map((r) => dateKey(r.createdAt))
+    )).sort((a, b) => b.localeCompare(a))
+    return dates
+  }, [archiveReports, selectedMonth])
 
   const archiveDayReports = useMemo(() => {
     if (!selectedArchiveDate) return []
-    return SAMPLE_ARCHIVE_REPORTS.filter((r) => dateKey(r.createdAt) === selectedArchiveDate)
-  }, [selectedArchiveDate])
+    return archiveReports.filter((r) => dateKey(r.createdAt) === selectedArchiveDate)
+  }, [archiveReports, selectedArchiveDate])
+
+  const allReports = useMemo(() => [...todayReports, ...archiveReports], [todayReports, archiveReports])
+
+  const allAuthors = useMemo(() =>
+    Array.from(new Map(allReports.map((r) => [r.authorId, r.authorName])).entries())
+      .map(([id, name]) => ({ id, name })),
+    [allReports]
+  )
 
   const personReports = useMemo(() => {
     if (!selectedAuthorId) return []
-    const base = ALL_REPORTS.filter((r) => r.authorId === selectedAuthorId)
+    const base = allReports.filter((r) => r.authorId === selectedAuthorId)
     if (personTab === 'today') return base.filter((r) => dateKey(r.createdAt) === TODAY)
     return base.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  }, [selectedAuthorId, personTab])
+  }, [selectedAuthorId, personTab, allReports, TODAY])
 
-  function handleReact(reportId: string, emoji: string) {
-    setTodayReports((prev) =>
-      prev.map((r) =>
-        r.id === reportId
-          ? { ...r, reactions: [...r.reactions, { id: `rx-${Date.now()}`, userId: 'u-001', emoji }] }
-          : r,
-      ),
-    )
+  async function handleReact(reportId: string, emoji: string) {
+    try {
+      const reaction = await addReaction(reportId, emoji)
+      const updateList = (list: Report[]) =>
+        list.map((r) =>
+          r.id === reportId ? { ...r, reactions: [...r.reactions, reaction] } : r
+        )
+      setTodayReports((prev) => updateList(prev))
+      setArchiveReports((prev) => updateList(prev))
+    } catch {
+      // 自己リアクション等のエラーは無視（UIで既にdisabled）
+    }
   }
 
   function enterPersonView(authorId: string, authorName: string) {
@@ -229,11 +211,19 @@ export default function HomePage() {
   }
 
   function changeMonth(delta: number) {
-    const next = ALL_MONTHS[currentMonthIdx + delta]
+    const next = allMonths[currentMonthIdx + delta]
     if (next) {
       setSelectedMonth(next)
       setSelectedArchiveDate(null)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <span className="text-bt-dark/30">読み込み中...</span>
+      </div>
+    )
   }
 
   return (
@@ -268,10 +258,9 @@ export default function HomePage() {
       {topTab === 'person' && (
         <div className="space-y-4">
           {!selectedAuthorId ? (
-            /* メンバー選択グリッド */
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {ALL_AUTHORS.map(({ id, name }) => {
-                const postCount = ALL_REPORTS.filter((r) => r.authorId === id).length
+              {allAuthors.map(({ id, name }) => {
+                const postCount = allReports.filter((r) => r.authorId === id).length
                 const color = avatarColor(id)
                 return (
                   <button
@@ -289,7 +278,6 @@ export default function HomePage() {
               })}
             </div>
           ) : (
-            /* パーソンビュー */
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -311,7 +299,6 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* 今日/全期間タブ */}
               <div className="flex rounded-xl border border-bt-dark/10 overflow-hidden bg-white shadow-sm w-fit">
                 {(['today', 'all'] as PersonTab[]).map((tab) => (
                   <button
@@ -332,7 +319,13 @@ export default function HomePage() {
               ) : (
                 <ul className="space-y-4">
                   {personReports.map((report) => (
-                    <ReportCard key={report.id} report={report} onReact={handleReact} showDate={personTab === 'all'} />
+                    <ReportCard
+                      key={report.id}
+                      report={report}
+                      currentUserId={user?.id}
+                      onReact={handleReact}
+                      showDate={personTab === 'all'}
+                    />
                   ))}
                 </ul>
               )}
@@ -355,6 +348,7 @@ export default function HomePage() {
                   <ReportCard
                     key={report.id}
                     report={report}
+                    currentUserId={user?.id}
                     onReact={handleReact}
                     onSelectAuthor={enterPersonView}
                   />
@@ -371,7 +365,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between rounded-xl border border-bt-dark/10 bg-white px-4 py-2.5 shadow-sm">
               <button
                 onClick={() => changeMonth(1)}
-                disabled={currentMonthIdx >= ALL_MONTHS.length - 1}
+                disabled={currentMonthIdx >= allMonths.length - 1}
                 aria-label="前の月"
                 className="rounded-lg px-2 py-1 text-lg text-bt-dark/50 hover:bg-bt-dark/5 disabled:opacity-30 transition-colors"
               >
@@ -379,9 +373,9 @@ export default function HomePage() {
               </button>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold">{formatMonthLabel(selectedMonth)}</span>
-                {monthCount > 0 && (
+                {archiveDatesOfMonth.length > 0 && (
                   <span className="rounded-full bg-bt-gold/20 px-2 py-0.5 text-xs font-medium text-bt-dark/60">
-                    {monthCount} 件
+                    {archiveReports.filter((r) => monthKey(r.createdAt) === selectedMonth).length} 件
                   </span>
                 )}
               </div>
@@ -401,7 +395,7 @@ export default function HomePage() {
                 {archiveDatesOfMonth.map((date) => {
                   const { md, wd } = formatChipLabel(date)
                   const isSelected = selectedArchiveDate === date
-                  const dayCount = SAMPLE_ARCHIVE_REPORTS.filter((r) => dateKey(r.createdAt) === date).length
+                  const dayCount = archiveReports.filter((r) => dateKey(r.createdAt) === date).length
                   return (
                     <button
                       key={date}
@@ -427,8 +421,10 @@ export default function HomePage() {
                   <ReportCard
                     key={report.id}
                     report={report}
-                    onReact={() => {}}
+                    currentUserId={user?.id}
+                    onReact={handleReact}
                     onSelectAuthor={enterPersonView}
+                    showDate
                   />
                 ))}
               </ul>

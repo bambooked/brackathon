@@ -80,3 +80,12 @@ class TriggerEventResponse(BaseModel):
     points_consumed: int
     transaction: PointTransaction
     user_balance: int
+
+
+class ActiveEventResponse(BaseModel):
+    """現在のアクティブイベント状態"""
+
+    active: bool
+    event_type: str | None = None  # "time" or "fever"
+    started_at: str | None = None
+    ends_at: str | None = None

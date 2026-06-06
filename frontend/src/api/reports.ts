@@ -91,21 +91,14 @@ export async function updateReport(
   reportId: string,
   input: { content?: string; title?: string },
 ): Promise<Report> {
-  const res = await request<{ id: number; user_id: number; report_date: string; title: string | null; body: string; created_at: string; updated_at: string }>(
+  const res = await request<BackendReport>(
     `/reports/${reportId}`,
     {
       method: 'PATCH',
       body: JSON.stringify({ title: input.title ?? null, body: input.content ?? null }),
     },
   )
-  return {
-    id: String(res.id),
-    authorId: String(res.user_id),
-    authorName: '',
-    content: res.body,
-    createdAt: res.created_at,
-    reactions: [],
-  }
+  return mapReport(res)
 }
 
 export async function addReaction(reportId: string, emoji: string): Promise<Reaction> {

@@ -41,11 +41,11 @@ export interface PointTransaction {
   createdAt: string
 }
 
-/** ポイント消費イベントのコスト基準 (PRESENT を基準に倍率) */
+/** ポイント消費イベントのコスト（バックエンドの実際値と一致させる） */
 export const POINT_COST = {
-  PRESENT: 1,
-  BT_TIME: 5,
-  BT_FEVER: 15,
+  PRESENT: 10,
+  BT_TIME: 50,
+  BT_FEVER: 150,
 } as const
 
 // ---- 日報 ----

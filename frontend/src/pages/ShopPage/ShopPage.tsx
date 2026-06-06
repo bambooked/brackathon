@@ -2,13 +2,10 @@ import { useEffect, useState } from 'react'
 
 import { fetchUsers, type TeamMember } from '@/api/auth'
 import { fetchMyPoints, sendPresent, startEvent } from '@/api/points'
+import { useAuth } from '@/contexts/AuthContext'
 import { type BTEvent, POINT_COST } from '@/types'
 
-const FALLBACK_MEMBERS: TeamMember[] = [
-  { id: 'u-002', name: '鈴木花子' },
-  { id: 'u-003', name: '田中一郎' },
-  { id: 'u-004', name: '佐藤美咲' },
-]
+const FALLBACK_MEMBERS: TeamMember[] = []
 
 const SHOP_ITEMS = [
   {
@@ -40,30 +37,33 @@ const SHOP_ITEMS = [
 type ShopItemType = 'present' | 'bt_time' | 'bt_fever'
 
 export default function ShopPage() {
-  const [myPoints, setMyPoints] = useState(23)
+  const { user } = useAuth()
+  const [myPoints, setMyPoints] = useState(0)
   const [members, setMembers] = useState<TeamMember[]>(FALLBACK_MEMBERS)
   const [selected, setSelected] = useState<ShopItemType | null>(null)
-  const [toUserId, setToUserId] = useState(FALLBACK_MEMBERS[0].id)
+  const [toUserId, setToUserId] = useState('')
   const [message, setMessage] = useState('')
   const [activeEvent, setActiveEvent] = useState<BTEvent | null>(null)
   const [presentSent, setPresentSent] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     fetchMyPoints().then(setMyPoints).catch(() => {/* フォールバック */})
     fetchUsers()
       .then((users) => {
-        if (users.length > 0) {
-          setMembers(users)
-          setToUserId(users[0].id)
-        }
+        // 自分自身を除外する
+        const others = users.filter((u) => u.id !== user?.id)
+        setMembers(others)
+        if (others.length > 0) setToUserId(others[0].id)
       })
       .catch(() => {/* フォールバック */})
-  }, [])
+  }, [user?.id])
 
   async function handleConfirm() {
     if (!selected || confirming) return
     setConfirming(true)
+    setErrorMsg('')
     try {
       if (selected === 'present') {
         await sendPresent(toUserId, message)
@@ -77,6 +77,9 @@ export default function ShopPage() {
         setActiveEvent(event)
         setSelected(null)
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '操作に失敗しました'
+      setErrorMsg(msg)
     } finally {
       setConfirming(false)
     }
@@ -204,16 +207,20 @@ export default function ShopPage() {
             </span>
           </div>
 
+          {errorMsg && (
+            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{errorMsg}</p>
+          )}
+
           <div className="flex gap-3">
             <button
-              onClick={() => setSelected(null)}
+              onClick={() => { setSelected(null); setErrorMsg('') }}
               className="flex-1 rounded-lg border border-bt-dark/20 py-2.5 text-sm font-medium text-bt-dark/60 hover:bg-bt-dark/5"
             >
               キャンセル
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!canAfford || confirming}
+              disabled={!canAfford || confirming || (selected === 'present' && !toUserId)}
               className="flex-1 rounded-lg bg-bt-gold py-2.5 text-sm font-bold text-bt-dark disabled:opacity-40 hover:brightness-105"
             >
               {confirming ? '処理中...' : '確定する ⚡'}
