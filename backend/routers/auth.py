@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
 
 router = APIRouter(prefix="/api/v1/auth", tags=["認証"])
 
@@ -13,6 +11,7 @@ class GoogleLoginRequest(BaseModel):
 
 class UserInfo(BaseModel):
     """users テーブルに対応するスキーマ"""
+
     id: int
     name: str
     email: str
@@ -29,6 +28,7 @@ class GoogleLoginResponse(BaseModel):
 
 class CurrentUserResponse(BaseModel):
     """現在ログイン中のユーザー情報（users テーブル）"""
+
     id: int
     name: str
     email: str
@@ -51,13 +51,13 @@ async def google_login(request: GoogleLoginRequest):
             email="test@example.com",
             role="member",
             created_at="2026-01-01T00:00:00Z",
-            updated_at="2026-06-06T00:00:00Z"
-        )
+            updated_at="2026-06-06T00:00:00Z",
+        ),
     )
 
 
 @router.get("/me", response_model=CurrentUserResponse)
-async def get_current_user(authorization: Optional[str] = Header(None)):
+async def get_current_user(authorization: str | None = Header(None)):
     """
     現在ログイン中のユーザー情報を取得（モック・Dependency認証の雛形）
     """
@@ -69,5 +69,5 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
         email="test@example.com",
         role="member",
         created_at="2026-01-01T00:00:00Z",
-        updated_at="2026-06-06T00:00:00Z"
+        updated_at="2026-06-06T00:00:00Z",
     )

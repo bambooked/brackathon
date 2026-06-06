@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 
 client = TestClient(app)
@@ -9,11 +10,8 @@ def test_present_bt():
     """POST /api/v1/points/present - 他のユーザーにBTを手渡し"""
     response = client.post(
         "/api/v1/points/present",
-        json={
-            "receiver_id": 2,
-            "amount": 10
-        },
-        headers={"Authorization": "Bearer dummy_jwt_token"}
+        json={"receiver_id": 2, "amount": 10},
+        headers={"Authorization": "Bearer dummy_jwt_token"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -31,8 +29,7 @@ def test_present_bt():
 def test_get_points_status():
     """GET /api/v1/points/status - ポイント状況を取得"""
     response = client.get(
-        "/api/v1/points/status",
-        headers={"Authorization": "Bearer dummy_jwt_token"}
+        "/api/v1/points/status", headers={"Authorization": "Bearer dummy_jwt_token"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -47,12 +44,8 @@ def test_exchange_points():
     """POST /api/v1/points/exchange - ポイントを景品と交換"""
     response = client.post(
         "/api/v1/points/exchange",
-        json={
-            "item_key": "snack_box",
-            "item_name": "ブラックサンダーBOX",
-            "points_spent": 50
-        },
-        headers={"Authorization": "Bearer dummy_jwt_token"}
+        json={"item_key": "snack_box", "item_name": "ブラックサンダーBOX", "points_spent": 50},
+        headers={"Authorization": "Bearer dummy_jwt_token"},
     )
     assert response.status_code == 200
     data = response.json()

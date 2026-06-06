@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 
 client = TestClient(app)
@@ -12,9 +13,9 @@ def test_create_report():
         json={
             "report_date": "2026-06-06",
             "title": "今日の業務報告",
-            "body": "APIの実装を進めました。認証とポイント機能を実装し、テストも完了しました。"
+            "body": "APIの実装を進めました。認証とポイント機能を実装し、テストも完了しました。",
         },
-        headers={"Authorization": "Bearer dummy_jwt_token"}
+        headers={"Authorization": "Bearer dummy_jwt_token"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -32,10 +33,7 @@ def test_create_report():
 
 def test_get_reports():
     """GET /api/v1/reports - チームの日報一覧を取得"""
-    response = client.get(
-        "/api/v1/reports",
-        headers={"Authorization": "Bearer dummy_jwt_token"}
-    )
+    response = client.get("/api/v1/reports", headers={"Authorization": "Bearer dummy_jwt_token"})
     assert response.status_code == 200
     data = response.json()
     assert "reports" in data
@@ -61,10 +59,8 @@ def test_react_to_report():
     """POST /api/v1/reports/{report_id}/react - 日報にリアクション"""
     response = client.post(
         "/api/v1/reports/1/react",
-        json={
-            "type": "like"
-        },
-        headers={"Authorization": "Bearer dummy_jwt_token"}
+        json={"type": "like"},
+        headers={"Authorization": "Bearer dummy_jwt_token"},
     )
     assert response.status_code == 200
     data = response.json()
