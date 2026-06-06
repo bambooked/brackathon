@@ -2,8 +2,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install
+# package.json と lock ファイルを先にコピーし、依存を固定インストール
+# (npm ci は package-lock.json に完全一致でインストール → 再現性が高い)
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
 
