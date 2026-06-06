@@ -75,6 +75,15 @@ class GetReportsResponse(BaseModel):
     reports: list[ReportWithDetails]
 
 
+class AllReportsResponse(BaseModel):
+    """全期間全ユーザーの日報取得レスポンス（統計情報含む）"""
+
+    reports: list[ReportWithDetails]
+    total_count: int
+    user_count: int
+    date_range: dict  # {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"}
+
+
 class ReactToReportRequest(BaseModel):
     type: str  # like / thanks / checked など
 
@@ -85,6 +94,7 @@ class ReactToReportResponse(BaseModel):
     reaction: Reaction
     author_point_transaction: dict | None = None  # 日報作成者へのポイント付与
     reactor_point_transaction: dict | None = None  # リアクション者へのポイント付与
+    my_new_balance: int  # リアクション実行者の更新後ポイント残高
     message: str
 
 
@@ -108,13 +118,14 @@ async def create_report(request: CreateReportRequest, authorization: str | None 
     )
 
 
-@router.get("", response_model=GetReportsResponse)
-async def get_reports(authorization: str | None = Header(None)):
+@router.get("/all", response_model=AllReportsResponse)
+async def get_all_reports(authorization: str | None = Header(None)):
     """
-    チームの日報一覧を取得 - daily_reports + reactions + users を JOIN（モック）
+    全期間全ユーザーの日報を取得（モック）
+    - 統計情報（総件数、ユーザー数、期間）を含む
     """
-    # モックデータとして2件の日報を返す
-    mock_reports = [
+    # モックデータとして複数日・複数ユーザーの日報を用意
+    all_mock_reports = [
         ReportWithDetails(
             id=1,
             user_id=1,
@@ -152,9 +163,105 @@ async def get_reports(authorization: str | None = Header(None)):
             created_at="2026-06-05T17:00:00Z",
             updated_at="2026-06-05T17:00:00Z",
         ),
+        ReportWithDetails(
+            id=3,
+            user_id=1,
+            user=UserSummary(id=1, name="テストユーザー", email="test@example.com", role="member"),
+            report_date="2026-06-06",
+            title="DB設計の進捗",
+            body="テーブル設計を完了しました。",
+            reactions=[],
+            created_at="2026-06-06T18:00:00Z",
+            updated_at="2026-06-06T18:00:00Z",
+        ),
     ]
 
-    return GetReportsResponse(reports=mock_reports)
+    # 統計情報を計算
+    user_ids = {r.user_id for r in all_mock_reports}
+    dates = sorted({r.report_date for r in all_mock_reports})
+    date_range = {"start": dates[0], "end": dates[-1]} if dates else {}
+
+    return AllReportsResponse(
+        reports=all_mock_reports,
+        total_count=len(all_mock_reports),
+        user_count=len(user_ids),
+        date_range=date_range,
+    )
+
+
+@router.get("", response_model=GetReportsResponse)
+async def get_reports(
+    report_date: str | None = None,
+    user_id: int | None = None,
+    authorization: str | None = Header(None),
+):
+    """
+    チームの日報一覧を取得（モック）
+    - report_date: 日付で絞り込み (例: "2026-06-06")
+    - user_id: 特定ユーザーで絞り込み
+    """
+    # モックデータとして複数日・複数ユーザーの日報を用意
+    all_mock_reports = [
+        ReportWithDetails(
+            id=1,
+            user_id=1,
+            user=UserSummary(id=1, name="テストユーザー", email="test@example.com", role="member"),
+            report_date="2026-06-05",
+            title="今日の開発進捗",
+            body="バックエンドAPIの実装を進めました。認証周りとポイント機能を実装。",
+            reactions=[
+                Reaction(
+                    id=1,
+                    daily_report_id=1,
+                    user_id=2,
+                    type="like",
+                    created_at="2026-06-05T18:00:00Z",
+                ),
+                Reaction(
+                    id=2,
+                    daily_report_id=1,
+                    user_id=3,
+                    type="thanks",
+                    created_at="2026-06-05T19:00:00Z",
+                ),
+            ],
+            created_at="2026-06-05T17:30:00Z",
+            updated_at="2026-06-05T17:30:00Z",
+        ),
+        ReportWithDetails(
+            id=2,
+            user_id=2,
+            user=UserSummary(id=2, name="山田太郎", email="yamada@example.com", role="member"),
+            report_date="2026-06-05",
+            title="フロントエンド実装",
+            body="ダッシュボード画面のUIを実装しました。",
+            reactions=[],
+            created_at="2026-06-05T17:00:00Z",
+            updated_at="2026-06-05T17:00:00Z",
+        ),
+        ReportWithDetails(
+            id=3,
+            user_id=1,
+            user=UserSummary(id=1, name="テストユーザー", email="test@example.com", role="member"),
+            report_date="2026-06-06",
+            title="DB設計の進捗",
+            body="テーブル設計を完了しました。",
+            reactions=[],
+            created_at="2026-06-06T18:00:00Z",
+            updated_at="2026-06-06T18:00:00Z",
+        ),
+    ]
+
+    # クエリパラメータでフィルタリング
+    filtered_reports = all_mock_reports
+
+    if report_date is not None:
+        filtered_reports = [r for r in filtered_reports if r.report_date == report_date]
+
+    if user_id is not None:
+        filtered_reports = [r for r in filtered_reports if r.user_id == user_id]
+
+    return GetReportsResponse(reports=filtered_reports)
 
 
 @router.post("/{report_id}/react", response_model=ReactToReportResponse)
@@ -177,16 +284,17 @@ async def react_to_report(
         author_point_transaction={
             "id": 201,
             "user_id": 2,  # 日報作成者（仮）
-            "amount": 3,
+            "amount": 10,  # 日報作成者は10ポイント獲得
             "transaction_type": "reaction_received",
             "created_at": "2026-06-06T10:00:00Z",
         },
         reactor_point_transaction={
             "id": 202,
             "user_id": 1,  # リアクション送信者
-            "amount": 1,
+            "amount": 2,  # リアクション者は2ポイント獲得
             "transaction_type": "reaction_given",
             "created_at": "2026-06-06T10:00:00Z",
         },
+        my_new_balance=120,  # リアクション実行者の更新後残高（モック固定値）
         message=f"日報 {report_id} に {request.type} リアクションを送りました",
     )
