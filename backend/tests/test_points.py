@@ -57,7 +57,7 @@ def test_get_points_status(client):
 
 
 def test_trigger_bt_time(client):
-    """POST /api/v1/points/time - BTtime（休憩）を発動"""
+    """POST /api/v1/points/time - Break Thunder（休憩）を発動"""
     response = client.post(
         "/api/v1/points/time", headers={"Authorization": f"Bearer {test_token}"}
     )
@@ -69,7 +69,7 @@ def test_trigger_bt_time(client):
     assert "event_type" in data
     assert data["event_type"] == "time"
     assert "points_consumed" in data
-    assert data["points_consumed"] == 50  # BTtime発動コスト
+    assert data["points_consumed"] == 50  # Break Thunder発動コスト
 
     # トランザクション検証
     assert "transaction" in data

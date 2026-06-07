@@ -1,50 +1,48 @@
-"""SSEイベントストリームエンドポイント。"""
+"""SSE エンドポイント。"""
 
 import asyncio
 import json
 
-from fastapi import APIRouter, HTTPException, Query, status
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, Query, Request
+from sse_starlette.sse import EventSourceResponse
 
-import state.sse as sse_state
+from sse.manager import manager
 from utils.auth import verify_access_token
 
 router = APIRouter(prefix="/api/v1/events", tags=["SSE"])
 
 
 @router.get("/stream")
-async def event_stream(token: str = Query(...)):
+async def stream_events(
+    request: Request,
+    token: str = Query(..., description="JWT アクセストークン"),
+):
     """
-    SSEストリームに接続する。
-    EventSourceはAuthorizationヘッダーを送れないため ?token= クエリで認証する。
-    接続中はチーム宛のイベントをリアルタイム配信し、30秒ごとにkeepaliveを送る。
+    チーム向け SSE ストリーム。
+    EventSource は Authorization ヘッダーを送れないため ?token= で認証する。
     """
     payload = verify_access_token(token)
     if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="無効なトークンです",
-        )
+        raise HTTPException(status_code=401, detail="無効なトークンです")
 
-    team_name: str = payload.get("team_name", "")
-    queue = sse_state.subscribe(team_name)
+    team_name = payload.get("team_name")
+    if not team_name:
+        raise HTTPException(status_code=401, detail="トークンにチーム情報がありません")
 
-    async def generate():
+    q: asyncio.Queue = asyncio.Queue()
+    manager.add(team_name, q)
+
+    async def generator():
         try:
             while True:
+                if await request.is_disconnected():
+                    break
                 try:
-                    event = await asyncio.wait_for(queue.get(), timeout=30)
-                    yield f"data: {json.dumps(event)}\n\n"
+                    data = await asyncio.wait_for(q.get(), timeout=25.0)
+                    yield {"data": json.dumps(data)}
                 except asyncio.TimeoutError:
-                    yield ": keepalive\n\n"
+                    yield {"comment": "keepalive"}
         finally:
-            sse_state.unsubscribe(queue)
+            manager.remove(team_name, q)
 
-    return StreamingResponse(
-        generate(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
-    )
+    return EventSourceResponse(generator())

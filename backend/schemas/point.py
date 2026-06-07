@@ -1,5 +1,7 @@
 """Point related Pydantic schemas."""
 
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -9,9 +11,7 @@ class PointTransaction(BaseModel):
     id: int
     user_id: int
     amount: int  # 正負の値
-    transaction_type: (
-        str  # reaction_received / reaction_given / point_exchange / manual_adjustment など
-    )
+    transaction_type: str
     source_type: str | None = None
     source_id: int | None = None
     description: str | None = None
@@ -23,7 +23,7 @@ class PointAccount(BaseModel):
 
     id: int
     user_id: int
-    balance: int  # 現在のポイント残高
+    balance: int
     created_at: str
     updated_at: str
 
@@ -54,8 +54,8 @@ class PointHistoryResponse(BaseModel):
     """ポイント履歴（point_transactions）"""
 
     transactions: list[PointTransaction]
-    total_earned: int  # 累計獲得ポイント
-    total_spent: int  # 累計消費ポイント
+    total_earned: int
+    total_spent: int
 
 
 class UserPointSummary(BaseModel):
@@ -72,6 +72,12 @@ class UsersPointsResponse(BaseModel):
     users: list[UserPointSummary]
 
 
+class BreakThunderRequest(BaseModel):
+    """Break Thunder 発動リクエスト。scheduled_at 省略時は即時発動。"""
+
+    scheduled_at: datetime | None = None
+
+
 class TriggerEventResponse(BaseModel):
     """イベント発動レスポンス（time/fever共通）"""
 
@@ -80,14 +86,5 @@ class TriggerEventResponse(BaseModel):
     points_consumed: int
     transaction: PointTransaction
     user_balance: int
-    ends_at: str
-    scheduled_at: str | None = None
-
-
-class ActiveEventResponse(BaseModel):
-    """現在のアクティブイベント状態"""
-
-    active: bool
-    event_type: str | None = None  # "time" or "fever"
-    started_at: str | None = None
-    ends_at: str | None = None
+    ends_at: str | None = None        # イベント終了時刻
+    scheduled_at: str | None = None  # Break Thunder のみ。即時発動の場合は None

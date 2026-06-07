@@ -282,3 +282,19 @@ textarea {
 56% 0% /* ⑫ 右上のゴール（頂点の幅はわずか7%！） */
   );
 }
+
+@keyframes break-thunder-tab-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-6px);
+  }
+  70% {
+    transform: translateY(2px);
+  }
+}
+
+.animate-break-thunder-tab {
+  animation: break-thunder-tab-bounce 1.35s ease-in-out infinite;
+}

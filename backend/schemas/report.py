@@ -103,3 +103,12 @@ class ReactToReportResponse(BaseModel):
     reactor_point_transaction: dict | None = None  # リアクション者へのポイント付与
     my_new_balance: int  # リアクション実行者の更新後ポイント残高
     message: str
+
+
+class DeleteReactionResponse(BaseModel):
+    """リアクション取り消し後のレスポンス"""
+
+    report_id: int
+    reaction_type: str
+    my_new_balance: int
+    message: str

@@ -31,6 +31,26 @@ def test_google_login(client):
     assert "updated_at" in data["user"]
 
 
+def test_google_login_with_selected_team(client):
+    """POST /api/v1/auth/google - 選択したチーム名でユーザーを作成"""
+    mock_id_info = {
+        "email": "team-b@example.com",
+        "name": "チームBユーザー",
+        "iss": "accounts.google.com",
+        "email_verified": True,
+    }
+
+    with patch("utils.auth.id_token.verify_oauth2_token", return_value=mock_id_info):
+        response = client.post(
+            "/api/v1/auth/google",
+            json={"id_token": "dummy_google_id_token", "team_name": "チームB"},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["user"]["team_name"] == "チームB"
+
+
 def test_google_login_unverified_email(client):
     """POST /api/v1/auth/google - Google側で未確認のメールアドレスは拒否"""
     mock_id_info = {

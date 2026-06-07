@@ -1,5 +1,5 @@
 // ============================================================
-// イベントページ — BTtime(休憩) / BTfever(対面コミュニケーション)
+// イベントページ — Break Thunder(休憩) / BTfever(対面コミュニケーション)
 // ポイントを消費して開催する。コストは PRESENT 基準の倍率。
 // ============================================================
 import { useState } from 'react'
@@ -21,10 +21,10 @@ export default function EventsPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <button
-          onClick={() => handleStart('bt_time')}
+          onClick={() => handleStart('break_thunder')}
           className="rounded-lg bg-white p-6 text-left shadow hover:ring-2 hover:ring-bt-gold"
         >
-          <p className="text-lg font-bold">BTtime</p>
+          <p className="text-lg font-bold">☕ Break Thunder</p>
           <p className="text-sm text-bt-dark/60">作業休憩 + 臨時掲示板</p>
           <p className="mt-2 text-sm">消費 {POINT_COST.BT_TIME} PT</p>
         </button>
@@ -33,7 +33,7 @@ export default function EventsPage() {
           onClick={() => handleStart('bt_fever')}
           className="rounded-lg bg-white p-6 text-left shadow hover:ring-2 hover:ring-bt-gold"
         >
-          <p className="text-lg font-bold">BTfever</p>
+          <p className="text-lg font-bold">⚡ BTfever</p>
           <p className="text-sm text-bt-dark/60">対面コミュニケーションタイム</p>
           <p className="mt-2 text-sm">消費 {POINT_COST.BT_FEVER} PT</p>
         </button>
@@ -41,7 +41,7 @@ export default function EventsPage() {
 
       {activeEvent && (
         <p className="rounded bg-bt-gold/20 p-3">
-          {activeEvent.type === 'bt_time' ? 'BTtime' : 'BTfever'} を開始しました！
+          {activeEvent.type === 'break_thunder' || activeEvent.type === 'bt_time' ? 'Break Thunder' : 'BTfever'} を開始しました！
         </p>
       )}
     </div>

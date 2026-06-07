@@ -52,14 +52,20 @@ async def google_login(request: GoogleLoginRequest):
             detail="メールアドレスが取得できませんでした",
         )
 
+    team_name = request.team_name.strip() if request.team_name else "チームA"
+    if not team_name:
+        team_name = "チームA"
+
     # ユーザーを取得または新規作成
     user = await user_crud.get_user_by_email(email)
     if user is None:
-        user = await user_crud.create_user(email=email, name=name)
+        user = await user_crud.create_user(email=email, name=name, team_name=team_name)
     else:
-        # 既存ユーザーの更新日時を更新
+        # プロトタイプ用: ログイン時の選択チームへ所属を切り替える
         user = await user_crud.update_user(
-            email=email, updated_at=datetime.now(UTC).isoformat()
+            email=email,
+            team_name=team_name,
+            updated_at=datetime.now(UTC).isoformat(),
         )
 
     # JWT Access Tokenを生成

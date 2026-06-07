@@ -46,4 +46,9 @@ describe('LoginPage', () => {
     renderLogin()
     expect(screen.getByLabelText('Googleでログイン')).toBeInTheDocument()
   })
+
+  it('チーム選択メニューを表示する', () => {
+    renderLogin()
+    expect(screen.getByLabelText('チーム')).toHaveValue('チームA')
+  })
 })

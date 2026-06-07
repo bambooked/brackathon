@@ -10,19 +10,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from db.config import close_db, init_db
-from routers import auth, break_thunder, events, points, reports
+from routers import auth, points, reports
+from routers.break_thunder import router as break_thunder_router
+from routers.events import router as events_router
+from scheduler import restore_pending_schedules, scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """アプリケーションのライフサイクル管理"""
-    # 起動時: Tortoise-ORMを初期化
     await init_db()
-    print("✅ Tortoise-ORM initialized")
+    scheduler.start()
+    await restore_pending_schedules()
+    print("✅ Tortoise-ORM initialized / Scheduler started")
     yield
-    # 終了時: DB接続をクローズ
+    scheduler.shutdown(wait=False)
     await close_db()
-    print("✅ Tortoise-ORM connections closed")
+    print("✅ Scheduler stopped / Tortoise-ORM connections closed")
 
 
 app = FastAPI(
@@ -49,13 +53,12 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(points.router)
 app.include_router(reports.router)
-app.include_router(events.router)
-app.include_router(break_thunder.router)
+app.include_router(events_router)
+app.include_router(break_thunder_router)
 
 
 @app.get("/")
 def read_root():
-    # Render環境かローカル環境かを判定する用のログ
     os.getenv("DATABASE_URL", "No DB URL found")
     return {"message": "Hello Black Thunder!", "db_status": "Connected to configuration"}
 

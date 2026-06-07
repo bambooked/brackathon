@@ -2,12 +2,13 @@
 // ルーティング定義 (ページ別)
 // ------------------------------------------------------------
 // 画面一覧:
-//   /login         ログイン
-//   /              ホーム (当日日報 + リアクション + アーカイブ)
-//   /post          日報投稿
+//   /login      ログイン
+//   /           ホーム (当日日報 + リアクション + アーカイブ)
+//   /post       日報投稿
+//   /invisible  見えない業務の見える化
 //   /break-thunder Break Thunder 掲示板
-//   /shop          BTショップ (プレゼント / Break Thunder / BTfever)
-//   /mypage        マイページ (自分のアーカイブ + ポイント)
+//   /shop       BTショップ (プレゼント / Break Thunder / BTfever)
+//   /mypage     マイページ (自分のアーカイブ + ポイント)
 // ============================================================
 import { Navigate, Route, Routes } from 'react-router-dom'
 
@@ -15,6 +16,7 @@ import Layout from './components/Layout/Layout'
 import { useAuth } from './contexts/AuthContext'
 import BreakThunderPage from './pages/BreakThunderPage/BreakThunderPage'
 import HomePage from './pages/HomePage/HomePage'
+import InvisibleTaskPage from './pages/InvisibleTaskPage/InvisibleTaskPage'
 import LoginPage from './pages/LoginPage/LoginPage'
 import MyPage from './pages/MyPage/MyPage'
 import PostPage from './pages/PostPage/PostPage'
@@ -26,7 +28,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bt-dark">
-        <span className="text-bt-thunder text-lg font-bold animate-pulse-thunder">Loading...</span>
+        <span className="text-bt-cream text-xl">⚡</span>
       </div>
     )
   }
@@ -47,6 +49,7 @@ export default function App() {
       >
         <Route path="/" element={<HomePage />} />
         <Route path="/post" element={<PostPage />} />
+        <Route path="/invisible" element={<InvisibleTaskPage />} />
         <Route path="/break-thunder" element={<BreakThunderPage />} />
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/mypage" element={<MyPage />} />

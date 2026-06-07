@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
+    team_name: str | None = None
 
 
 class UserInfo(BaseModel):
