@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { updateProfile } from '@/api/auth'
 import { fetchMyPoints, fetchPointHistory } from '@/api/points'
@@ -49,7 +50,8 @@ const REASON_LABEL: Record<string, string> = {
   report_reaction: 'リアクションをもらった',
   invisible_task: '見えない業務を見える化 (AI)',
   present: 'BTプレゼントを送った',
-  bt_time: 'BTtimeを開催',
+  break_thunder: 'Break Thunderを開催',
+  bt_time: 'Break Thunderを開催',
   bt_fever: 'BTfeverを開催',
 }
 
@@ -60,7 +62,8 @@ function formatDate(iso: string) {
 }
 
 export default function MyPage() {
-  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { user, clearAuth } = useAuth()
 
   const [name, setName] = useState(user?.name ?? '山田太郎')
   const [nickname, setNickname] = useState('')
@@ -94,6 +97,11 @@ export default function MyPage() {
     } finally {
       setProfileSaving(false)
     }
+  }
+
+  function handleLogout() {
+    clearAuth()
+    navigate('/login', { replace: true })
   }
 
   const displayName = showNickname && nickname.trim() ? nickname : name
@@ -284,6 +292,16 @@ export default function MyPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="border-t border-bt-thunder/20 pt-5">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full rounded-lg border border-red-400/30 bg-red-900/10 px-5 py-3 text-sm font-black text-red-400 transition-colors hover:bg-red-900/20"
+        >
+          ログアウト
+        </button>
       </section>
     </div>
   )

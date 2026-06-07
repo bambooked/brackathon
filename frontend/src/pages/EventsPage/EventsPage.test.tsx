@@ -18,6 +18,7 @@ beforeEach(() => {
     startedAt: '2026-06-06T10:00:00+09:00',
     endsAt: '2026-06-06T10:15:00+09:00',
     active: true,
+    scheduledAt: null,
   }))
 })
 

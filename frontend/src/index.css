@@ -17,6 +17,16 @@ body {
   font-size: 16px;
 }
 
+@keyframes break-thunder-tab-bounce {
+  0%, 100% { transform: translateY(0); }
+  45%       { transform: translateY(-6px); }
+  70%       { transform: translateY(2px); }
+}
+
+.animate-break-thunder-tab {
+  animation: break-thunder-tab-bounce 1.35s ease-in-out infinite;
+}
+
 h1,
 h2,
 button,
@@ -136,11 +146,11 @@ textarea {
 /* ref.jpeg の 8x19 グリッド座標を使った左メニュー専用の稲妻背景 */
 .bt-menu-thunder {
   position: absolute;
-  top: -38px;
-  left: -46px;
+  top: -84px;
+  left: -78px;
   z-index: 0;
-  width: 245px;
-  height: 580px;
+  width: 319px;
+  height: 754px;
   pointer-events: none;
   opacity: 0.95;
   background:

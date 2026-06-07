@@ -53,7 +53,7 @@ describe('ShopPage', () => {
   it('3つのアイテムが表示される', () => {
     renderPage()
     expect(screen.getByText('BTプレゼント')).toBeInTheDocument()
-    expect(screen.getByText('BTtime')).toBeInTheDocument()
+    expect(screen.getByText('Break Thunder')).toBeInTheDocument()
     expect(screen.getByText('BTfever')).toBeInTheDocument()
   })
 

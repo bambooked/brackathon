@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { loginWithGoogle } from '@/api/auth'
@@ -21,12 +21,20 @@ declare global {
 }
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
+const TEAM_OPTIONS = ['チームA', 'チームB', 'チームC']
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const { setAuth } = useAuth()
   const buttonRef = useRef<HTMLDivElement>(null)
+  const selectedTeamRef = useRef(TEAM_OPTIONS[0])
   const [error, setError] = useState('')
+  const [selectedTeam, setSelectedTeam] = useState(TEAM_OPTIONS[0])
+
+  function handleTeamChange(e: ChangeEvent<HTMLSelectElement>) {
+    selectedTeamRef.current = e.target.value
+    setSelectedTeam(e.target.value)
+  }
 
   useEffect(() => {
     const script = document.createElement('script')
@@ -40,7 +48,7 @@ export default function LoginPage() {
         callback: async ({ credential }) => {
           setError('')
           try {
-            const result = await loginWithGoogle(credential)
+            const result = await loginWithGoogle(credential, selectedTeamRef.current)
             setAuth(result)
             navigate('/', { replace: true })
           } catch {
@@ -63,17 +71,43 @@ export default function LoginPage() {
   }, [navigate, setAuth])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bt-dark px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-xl bg-bt-card border-2 border-bt-thunder p-8 shadow-2xl shadow-bt-thunder/20 text-center">
-        <div className="flex justify-center mb-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bt-dark px-4">
+      {/* BT包装紙風の背景装飾 */}
+      <div className="bt-zigzag-decoration bt-zigzag-left" />
+      <div className="bt-zigzag-decoration bt-zigzag-right" />
+      <div className="bt-thunder-center" />
+
+      <div className="relative z-10 w-full max-w-sm space-y-6 rounded-xl border-2 border-bt-thunder bg-bt-card p-8 text-center shadow-2xl shadow-bt-thunder/20">
+        <div className="flex justify-center mb-2">
           <img
-            src="/blackthunder_logo-2.png"
-            alt="Black Thunder"
-            className="h-16 object-contain"
+            src="/blackathon_sticker-09_BTDD.png"
+            alt="BTアプリアイコン"
+            className="h-56 w-56 object-contain drop-shadow-xl"
           />
         </div>
-        <h1 className="text-2xl font-bold text-bt-thunder">BT ログイン</h1>
-        <p className="text-sm text-bt-gray">Googleアカウントでログインしてください</p>
+        <h1 className="font-black text-bt-thunder">BT ログイン</h1>
+        <p
+          className="text-sm font-black text-bt-gray"
+          style={{ fontFamily: 'var(--bt-display-font)' }}
+        >
+          Googleアカウントでログインしてください
+        </p>
+        <div className="text-left space-y-1">
+          <label htmlFor="team-name" className="block text-xs font-black text-bt-gray" style={{ fontFamily: 'var(--bt-display-font)' }}>
+            チーム
+          </label>
+          <select
+            id="team-name"
+            aria-label="チーム"
+            value={selectedTeam}
+            onChange={handleTeamChange}
+            className="w-full rounded-lg border border-bt-thunder/30 bg-bt-dark px-3 py-2 text-sm text-bt-cream outline-none focus:border-bt-thunder"
+          >
+            {TEAM_OPTIONS.map((team) => (
+              <option key={team} value={team}>{team}</option>
+            ))}
+          </select>
+        </div>
         <div className="flex justify-center" ref={buttonRef} aria-label="Googleでログイン" />
         {error && <p className="text-sm text-red-400 bg-red-900/20 border border-red-400/30 rounded-lg px-3 py-2">{error}</p>}
         {!GOOGLE_CLIENT_ID && (

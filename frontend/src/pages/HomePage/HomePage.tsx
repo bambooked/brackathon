@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { addReaction, fetchAllReports, fetchReports } from '@/api/reports'
+import { addReaction, fetchAllReports, fetchReports, removeReaction } from '@/api/reports'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Report } from '@/types'
 
@@ -203,13 +203,28 @@ export default function HomePage() {
 
   async function handleReact(reportId: string, emoji: string) {
     try {
-      const reaction = await addReaction(reportId, emoji)
-      const updateList = (list: Report[]) =>
-        list.map((r) =>
-          r.id === reportId ? { ...r, reactions: [...r.reactions, reaction] } : r
-        )
-      setTodayReports((prev) => updateList(prev))
-      setArchiveReports((prev) => updateList(prev))
+      const report = [...todayReports, ...archiveReports].find((r) => r.id === reportId)
+      const alreadyReacted = report?.reactions.some((r) => r.userId === user?.id && r.emoji === emoji) ?? false
+
+      if (alreadyReacted) {
+        await removeReaction(reportId, emoji)
+        const updateList = (list: Report[]) =>
+          list.map((r) =>
+            r.id === reportId
+              ? { ...r, reactions: r.reactions.filter((rx) => !(rx.userId === user?.id && rx.emoji === emoji)) }
+              : r
+          )
+        setTodayReports((prev) => updateList(prev))
+        setArchiveReports((prev) => updateList(prev))
+      } else {
+        const reaction = await addReaction(reportId, emoji)
+        const updateList = (list: Report[]) =>
+          list.map((r) =>
+            r.id === reportId ? { ...r, reactions: [...r.reactions, reaction] } : r
+          )
+        setTodayReports((prev) => updateList(prev))
+        setArchiveReports((prev) => updateList(prev))
+      }
     } catch {
       // 自己リアクション等のエラーは無視（UIで既にdisabled）
     }

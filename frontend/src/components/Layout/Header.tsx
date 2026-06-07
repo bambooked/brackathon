@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
-import type { ActiveEvent } from '@/api/points'
+import { fetchBreakThunderActive } from '@/api/breakThunder'
+import { connectEventStream, type SSEEvent } from '@/api/events'
 import { fetchMyPoints } from '@/api/points'
 import { useAuth } from '@/contexts/AuthContext'
 
 const navItems = [
   { to: '/', label: 'ホーム' },
   { to: '/post', label: '投稿' },
-  { to: '/invisible', label: '見える化' },
   { to: '/shop', label: 'BTショップ' },
   { to: '/mypage', label: 'マイページ' },
 ]
@@ -18,13 +18,30 @@ const MENU_BT = {
   active: '/breaked_bt.PNG',
 } as const
 
-interface HeaderProps {
-  activeEvent: ActiveEvent | null
+const EVENT_LABEL: Record<SSEEvent['type'], string> = {
+  break_thunder: '☕ Break Thunder 掲示板が開きました！',
+  bt_time: '☕ Break Thunder 掲示板が開きました！',
+  bt_fever: '⚡ BTfever 開催中！',
 }
 
-export default function Header({ activeEvent }: HeaderProps) {
+export default function Header() {
   const { user } = useAuth()
   const [myPoints, setMyPoints] = useState(0)
+  const [eventLabel, setEventLabel] = useState<string | null>(null)
+  const [breakThunderEndsAt, setBreakThunderEndsAt] = useState<string | null>(null)
+  const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const breakThunderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const armBreakThunderTab = useCallback((endsAt: string) => {
+    setBreakThunderEndsAt(endsAt)
+    if (breakThunderTimerRef.current) clearTimeout(breakThunderTimerRef.current)
+    const remaining = new Date(endsAt).getTime() - Date.now()
+    if (remaining > 0) {
+      breakThunderTimerRef.current = setTimeout(() => setBreakThunderEndsAt(null), remaining)
+    } else {
+      setBreakThunderEndsAt(null)
+    }
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -35,11 +52,34 @@ export default function Header({ activeEvent }: HeaderProps) {
     return () => clearInterval(id)
   }, [user])
 
-  const eventLabel = activeEvent?.active
-    ? activeEvent.event_type === 'time'
-      ? 'BTtime 開催中'
-      : 'BTfever 開催中'
-    : null
+  useEffect(() => {
+    if (!user) return
+
+    fetchBreakThunderActive()
+      .then((active) => {
+        if (active.active && active.endsAt) armBreakThunderTab(active.endsAt)
+      })
+      .catch(() => {})
+
+    const es = connectEventStream((event) => {
+      setEventLabel(EVENT_LABEL[event.type])
+      if (event.type === 'break_thunder' || event.type === 'bt_time') {
+        armBreakThunderTab(event.ends_at)
+      }
+
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
+      const remaining = new Date(event.ends_at).getTime() - Date.now()
+      if (remaining > 0) {
+        clearTimerRef.current = setTimeout(() => setEventLabel(null), remaining)
+      }
+    })
+
+    return () => {
+      es.close()
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
+      if (breakThunderTimerRef.current) clearTimeout(breakThunderTimerRef.current)
+    }
+  }, [armBreakThunderTab, user])
 
   return (
     <>
@@ -49,7 +89,7 @@ export default function Header({ activeEvent }: HeaderProps) {
         </div>
       )}
 
-      <nav className="fixed left-[156px] top-40 z-20 hidden w-40 flex-col gap-3 xl:flex">
+      <nav className="fixed left-[184px] top-40 z-20 hidden w-40 flex-col gap-3 xl:flex">
         <div className="bt-menu-thunder" aria-hidden="true" />
         <div className="bt-menu-copy" aria-hidden="true">
           <span>メニュー！</span>
@@ -81,9 +121,35 @@ export default function Header({ activeEvent }: HeaderProps) {
             )}
           </NavLink>
         ))}
+        {breakThunderEndsAt && (
+          <NavLink
+            to="/break-thunder"
+            className={({ isActive }) =>
+              `animate-break-thunder-tab group relative z-10 flex aspect-[16/9] w-full shrink-0 items-center justify-center transition-transform hover:-rotate-2 hover:scale-105 ${
+                isActive ? '-rotate-2 scale-105' : ''
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <img
+                  src={isActive ? MENU_BT.active : MENU_BT.normal}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full object-contain drop-shadow-xl"
+                />
+                <span className="relative z-10 max-w-[78%] text-center text-lg font-black leading-none text-white [text-shadow:2px_2px_0_rgba(0,0,0,0.85)]">
+                  ☕ 掲示板
+                </span>
+              </>
+            )}
+          </NavLink>
+        )}
       </nav>
 
-      <nav className="fixed bottom-3 left-1/2 z-40 grid w-[min(96vw,32rem)] -translate-x-1/2 grid-cols-5 gap-1 rounded-full bg-bt-black/80 px-2 py-2 shadow-xl shadow-bt-black/60 backdrop-blur xl:hidden">
+      <nav className="fixed bottom-3 left-1/2 z-40 grid -translate-x-1/2 gap-1 rounded-full bg-bt-black/80 px-2 py-2 shadow-xl shadow-bt-black/60 backdrop-blur xl:hidden"
+        style={{ gridTemplateColumns: `repeat(${navItems.length + (breakThunderEndsAt ? 1 : 0)}, minmax(0, 1fr))`, width: `min(96vw, ${(navItems.length + (breakThunderEndsAt ? 1 : 0)) * 6.4}rem)` }}
+      >
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -110,6 +176,30 @@ export default function Header({ activeEvent }: HeaderProps) {
             )}
           </NavLink>
         ))}
+        {breakThunderEndsAt && (
+          <NavLink
+            to="/break-thunder"
+            className={({ isActive }) =>
+              `animate-break-thunder-tab relative flex aspect-[16/9] min-w-0 items-center justify-center transition-transform ${
+                isActive ? '-rotate-2 scale-105' : ''
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <img
+                  src={isActive ? MENU_BT.active : MENU_BT.normal}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full object-contain"
+                />
+                <span className="relative z-10 max-w-[82%] text-center text-[10px] font-black leading-none text-white [text-shadow:1px_1px_0_rgba(0,0,0,0.85)]">
+                  ☕ 掲示板
+                </span>
+              </>
+            )}
+          </NavLink>
+        )}
       </nav>
 
       {user && (

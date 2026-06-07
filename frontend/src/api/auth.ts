@@ -33,10 +33,10 @@ function mapUser(u: BackendUser): User {
   }
 }
 
-export async function loginWithGoogle(idToken: string): Promise<AuthResult> {
+export async function loginWithGoogle(idToken: string, teamName: string): Promise<AuthResult> {
   const res = await request<GoogleLoginResponse>('/auth/google', {
     method: 'POST',
-    body: JSON.stringify({ id_token: idToken }),
+    body: JSON.stringify({ id_token: idToken, team_name: teamName }),
   })
   setToken(res.access_token)
   return { token: res.access_token, user: mapUser(res.user) }

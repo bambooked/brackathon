@@ -2,13 +2,6 @@ import type { BTEvent, EventType, PointTransaction, Present } from '@/types'
 
 import { request } from './client'
 
-export interface ActiveEvent {
-  active: boolean
-  event_type: 'time' | 'fever' | null
-  started_at: string | null
-  ends_at: string | null
-}
-
 // バックエンドのレスポンス型
 interface BackendTransaction {
   id: number
@@ -19,6 +12,15 @@ interface BackendTransaction {
   source_id: number | null
   description: string | null
   created_at: string
+}
+
+interface TriggerEventBackendResponse {
+  message: string
+  event_type: string
+  points_consumed: number
+  transaction: BackendTransaction
+  user_balance: number
+  scheduled_at: string | null
 }
 
 export async function fetchMyPoints(): Promise<number> {
@@ -62,22 +64,36 @@ export async function fetchTeamPoints(_teamId: string): Promise<number> {
   return res.users.reduce((sum, u) => sum + u.balance, 0)
 }
 
-export async function fetchActiveEvent(): Promise<ActiveEvent> {
-  return request<ActiveEvent>('/points/event')
-}
+/**
+ * Break Thunder / BTfever を発動する。
+ * Break Thunder のみ scheduledAt（ISO8601）を指定可能。省略時は即時発動。
+ * scheduled_at が返る場合は未来予約、null は即時発動。
+ */
+export async function startEvent(
+  type: EventType,
+  scheduledAt?: string,
+): Promise<BTEvent & { scheduledAt: string | null }> {
+  const isBreakThunder = type === 'break_thunder' || type === 'bt_time'
+  const path = isBreakThunder ? '/points/time' : '/points/fever'
+  const body = isBreakThunder && scheduledAt ? { scheduled_at: scheduledAt } : undefined
 
-export async function startEvent(type: EventType): Promise<BTEvent> {
-  const path = type === 'bt_time' ? '/points/time' : '/points/fever'
-  const res = await request<{ message: string; event_type: string; points_consumed: number; transaction: BackendTransaction; user_balance: number }>(
-    path,
-    { method: 'POST' },
-  )
+  const res = await request<TriggerEventBackendResponse>(path, {
+    method: 'POST',
+    body: body ? JSON.stringify(body) : undefined,
+  })
+
+  const isScheduled = res.scheduled_at != null
+  const endsAt = isScheduled
+    ? new Date(new Date(res.scheduled_at!).getTime() + 30 * 60_000).toISOString()
+    : new Date(Date.now() + (isBreakThunder ? 15 : 60) * 60_000).toISOString()
+
   return {
     id: String(res.transaction.id),
-    type,
+    type: isBreakThunder ? 'break_thunder' : type,
     hostId: String(res.transaction.user_id),
     startedAt: res.transaction.created_at,
-    endsAt: new Date(Date.now() + 30 * 60_000).toISOString(),
-    active: true,
+    endsAt,
+    active: !isScheduled,
+    scheduledAt: res.scheduled_at,
   }
 }
