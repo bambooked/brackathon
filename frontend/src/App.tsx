@@ -26,7 +26,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bt-dark">
-        <span className="text-bt-thunder text-5xl animate-pulse-thunder">⚡</span>
+        <span className="text-bt-thunder text-lg font-bold animate-pulse-thunder">Loading...</span>
       </div>
     )
   }

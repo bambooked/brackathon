@@ -19,7 +19,7 @@ export default function BTMeter({ current, max }: BTMeterProps) {
     <div className="w-full" role="meter" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
       <div className="mb-1 flex justify-between text-sm font-medium">
         <span>BTメーター</span>
-        <span>{isFever ? '⚡FEVER!⚡' : `${percent}%`}</span>
+        <span>{isFever ? 'FEVER!' : `${percent}%`}</span>
       </div>
       <div className="h-5 w-full overflow-hidden rounded-full bg-bt-dark/10">
         <div

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
-import { fetchActiveEvent, type ActiveEvent } from '@/api/points'
+import { type ActiveEvent, fetchActiveEvent } from '@/api/points'
 import { useAuth } from '@/contexts/AuthContext'
 
 import Header from './Header'
@@ -29,6 +29,8 @@ export default function Layout() {
 
   return (
     <div className={`min-h-screen bg-bt-dark text-bt-cream ${eventClass}`}>
+      <Header activeEvent={activeEvent} />
+
       {/* ブラックサンダーパッケージの黄色ギザギザ装飾 */}
       <div className="bt-zigzag-decoration bt-zigzag-left" />
       <div className="bt-zigzag-decoration bt-zigzag-right" />
@@ -40,7 +42,6 @@ export default function Layout() {
       {activeEvent?.active && activeEvent.event_type === 'fever' && (
         <div className="bt-lightning-bg" />
       )}
-      <Header activeEvent={activeEvent} />
       <main className="mx-auto max-w-3xl px-6 py-8 relative z-10">
         <Outlet />
       </main>

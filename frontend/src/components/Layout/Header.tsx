@@ -1,16 +1,16 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
 import type { ActiveEvent } from '@/api/points'
 import { fetchMyPoints } from '@/api/points'
 import { useAuth } from '@/contexts/AuthContext'
-import { useEffect, useState } from 'react'
 
 const navItems = [
-  { to: '/', label: 'ホーム', icon: '🏠' },
-  { to: '/post', label: '投稿', icon: '✏️' },
-  { to: '/invisible', label: '見える化', icon: '🔍' },
-  { to: '/shop', label: 'BTショップ', icon: '⚡' },
-  { to: '/mypage', label: 'マイページ', icon: '👤' },
+  { to: '/', label: 'ホーム' },
+  { to: '/post', label: '投稿' },
+  { to: '/invisible', label: '見える化' },
+  { to: '/shop', label: 'BTショップ' },
+  { to: '/mypage', label: 'マイページ' },
 ]
 
 interface HeaderProps {
@@ -33,8 +33,8 @@ export default function Header({ activeEvent }: HeaderProps) {
   const eventLabel =
     activeEvent?.active
       ? activeEvent.event_type === 'time'
-        ? '☕ BTtime 開催中！'
-        : '⚡ BTfever 開催中！'
+        ? 'BTtime 開催中'
+        : 'BTfever 開催中'
       : null
 
   return (
@@ -70,28 +70,19 @@ export default function Header({ activeEvent }: HeaderProps) {
                       : 'flex items-center gap-2 px-4 py-2 rounded-lg text-bt-gray hover:text-bt-thunder hover:bg-bt-card transition-all'
                   }
                 >
-                  <span className="text-lg">{item.icon}</span>
                   <span className="text-sm font-medium">{item.label}</span>
                 </NavLink>
               ))}
             </nav>
           </div>
 
-          {/* 右側: ポイント表示 + ユーザー名 */}
+          {/* 右側: ポイント表示 */}
           {user && (
-            <div className="flex items-center gap-4">
-              {/* ポイント残高 */}
-              <div className="flex items-center gap-2 bg-bt-card border-2 border-bt-thunder rounded-lg px-4 py-2">
-                <span className="text-2xl">⚡</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-bt-thunder">{myPoints}</span>
-                  <span className="text-xs font-medium text-bt-gray">PT</span>
-                </div>
-              </div>
-
-              {/* ユーザー名 */}
-              <div className="flex items-center gap-2 bg-bt-card/50 rounded-full px-4 py-2 border border-bt-thunder/20">
-                <span className="text-sm font-medium text-bt-cream">{user.name}</span>
+            <div className="relative flex h-20 w-28 shrink-0 items-center justify-center md:h-24 md:w-36">
+              <div className="pointer-events-none absolute right-1/2 top-1/2 h-[42rem] w-[42rem] -translate-y-1/2 translate-x-[76%] rounded-full bg-red-700 shadow-xl shadow-red-950/60 md:h-[56rem] md:w-[56rem] md:translate-x-[80%]" />
+              <div className="relative z-10 flex flex-col items-center text-bt-cream [text-shadow:2px_2px_0_rgba(0,0,0,0.55)]">
+                <span className="text-5xl font-black leading-none tracking-wide md:text-6xl">{myPoints}</span>
+                <span className="mt-1 text-base font-black leading-none tracking-[0.18em] md:text-lg">PT</span>
               </div>
             </div>
           )}
@@ -110,7 +101,6 @@ export default function Header({ activeEvent }: HeaderProps) {
                   : 'flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-bt-gray'
               }
             >
-              <span className="text-xl">{item.icon}</span>
               <span className="text-xs font-medium">{item.label}</span>
             </NavLink>
           ))}

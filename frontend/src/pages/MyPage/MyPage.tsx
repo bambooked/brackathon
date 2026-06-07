@@ -245,7 +245,7 @@ export default function MyPage() {
           onClick={() => setArchiveOpen((v) => !v)}
           className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-sm font-medium text-bt-gray hover:text-bt-thunder transition-colors"
         >
-          <span>📂 自分の日報アーカイブ ({myReports.length} 件)</span>
+          <span>自分の日報アーカイブ ({myReports.length} 件)</span>
           <span className="text-lg">{archiveOpen ? '▲' : '▼'}</span>
         </button>
 

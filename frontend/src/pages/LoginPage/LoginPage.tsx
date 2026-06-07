@@ -72,7 +72,7 @@ export default function LoginPage() {
             className="h-16 object-contain"
           />
         </div>
-        <h1 className="text-2xl font-bold text-bt-thunder">⚡ BT ログイン</h1>
+        <h1 className="text-2xl font-bold text-bt-thunder">BT ログイン</h1>
         <p className="text-sm text-bt-gray">Googleアカウントでログインしてください</p>
         <div className="flex justify-center" ref={buttonRef} aria-label="Googleでログイン" />
         {error && <p className="text-sm text-red-400 bg-red-900/20 border border-red-400/30 rounded-lg px-3 py-2">{error}</p>}
