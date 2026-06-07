@@ -30,6 +30,10 @@ interface BackendMessage {
   created_at: string
 }
 
+interface BackendMessagesResponse extends BackendActive {
+  messages: BackendMessage[]
+}
+
 function mapActive(active: BackendActive): BreakThunderActive {
   return {
     active: active.active,
@@ -58,9 +62,9 @@ export async function fetchBreakThunderMessages(): Promise<{
   active: BreakThunderActive
   messages: BreakThunderMessage[]
 }> {
-  const res = await request<{ active: BackendActive; messages: BackendMessage[] }>('/break-thunder/messages')
+  const res = await request<BackendMessagesResponse>('/break-thunder/messages')
   return {
-    active: mapActive(res.active),
+    active: mapActive(res),
     messages: res.messages.map(mapMessage),
   }
 }

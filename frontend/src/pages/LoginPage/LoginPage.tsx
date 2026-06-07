@@ -25,11 +25,17 @@ const TEAM_OPTIONS = ['チームA', 'チームB', 'チームC']
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { setAuth } = useAuth()
+  const { isAuthenticated, setAuth } = useAuth()
   const buttonRef = useRef<HTMLDivElement>(null)
   const selectedTeamRef = useRef(TEAM_OPTIONS[0])
   const [error, setError] = useState('')
   const [selectedTeam, setSelectedTeam] = useState(TEAM_OPTIONS[0])
+
+  // setAuth 後に isAuthenticated が true になったタイミングで遷移する
+  // （Google コールバック内で直接 navigate するとコミット前に RequireAuth に弾かれるため）
+  useEffect(() => {
+    if (isAuthenticated) navigate('/', { replace: true })
+  }, [isAuthenticated, navigate])
 
   function handleTeamChange(e: ChangeEvent<HTMLSelectElement>) {
     selectedTeamRef.current = e.target.value
@@ -50,7 +56,6 @@ export default function LoginPage() {
           try {
             const result = await loginWithGoogle(credential, selectedTeamRef.current)
             setAuth(result)
-            navigate('/', { replace: true })
           } catch {
             setError('ログインに失敗しました。もう一度お試しください。')
           }
