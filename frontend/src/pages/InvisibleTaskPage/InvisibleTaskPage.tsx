@@ -118,7 +118,7 @@ export default function InvisibleTaskPage() {
     <div className="space-y-6">
       {/* ヘッダー */}
       <div>
-        <h1 className="text-2xl font-bold text-bt-cream">見えない業務の見える化 🔍</h1>
+        <h1 className="text-2xl font-bold text-bt-cream">見えない業務の見える化</h1>
         <p className="text-sm text-bt-gray-dark mt-1">
           チームメンバーの「誰も気づいていないがんばり」を書き込もう。
           AIが内容を判定してその人にPTを付与します。
@@ -190,7 +190,7 @@ export default function InvisibleTaskPage() {
             disabled={!content.trim() || submitting}
             className="w-full rounded-lg bg-bt-thunder py-3 font-bold text-bt-black disabled:opacity-40 hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/30"
           >
-            {submitting ? '🤖 AIが判定中...' : '送信してPTを贈る ⚡'}
+            {submitting ? 'AIが判定中...' : '送信してPTを贈る'}
           </button>
         </div>
       </form>
@@ -198,7 +198,6 @@ export default function InvisibleTaskPage() {
       {/* AI判定結果 */}
       {aiResult && (
         <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-5 flex items-start gap-4 shadow-lg shadow-bt-thunder/20">
-          <span className="text-3xl">🤖</span>
           <div>
             <p className="font-bold text-bt-thunder">AIが判定しました！</p>
             <p className="text-sm text-bt-cream mt-1">
@@ -212,7 +211,7 @@ export default function InvisibleTaskPage() {
       {/* 自分への報告 */}
       <section>
         <h2 className="font-bold text-bt-thunder text-sm uppercase tracking-wide mb-3">
-          自分への報告 🎉
+          自分への報告
         </h2>
         {myIncoming.length === 0 ? (
           <p className="text-center text-bt-gray-dark text-sm py-6">まだ報告はありません</p>

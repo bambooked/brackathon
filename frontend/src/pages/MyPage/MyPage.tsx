@@ -183,7 +183,7 @@ export default function MyPage() {
                 {profileSaving ? '保存中...' : '保存する'}
               </button>
               {profileSaved && (
-                <span className="text-sm text-bt-thunder font-medium">✓ 保存しました</span>
+                <span className="text-sm text-bt-thunder font-medium">保存しました</span>
               )}
             </div>
           </form>

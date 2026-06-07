@@ -10,7 +10,7 @@ const FALLBACK_MEMBERS: TeamMember[] = []
 const SHOP_ITEMS = [
   {
     id: 'present',
-    icon: '🍫',
+    icon: '',
     title: 'BTプレゼント',
     description: '頑張った仲間にブラックサンダーを1個プレゼント',
     cost: POINT_COST.PRESENT,
@@ -18,7 +18,7 @@ const SHOP_ITEMS = [
   },
   {
     id: 'bt_time',
-    icon: '☕',
+    icon: '',
     title: 'BTtime',
     description: 'ブラックサンダーを食べながら作業休憩タイム！臨時掲示板も開設',
     cost: POINT_COST.BT_TIME,
@@ -26,7 +26,7 @@ const SHOP_ITEMS = [
   },
   {
     id: 'bt_fever',
-    icon: '⚡',
+    icon: '',
     title: 'BTfever',
     description: 'チーム全員でブラックサンダーを食べながら対面コミュニケーション！',
     cost: POINT_COST.BT_FEVER,
@@ -105,12 +105,11 @@ export default function ShopPage() {
       {/* 発動中イベント */}
       {activeEvent && (
         <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-4 flex items-center gap-3 shadow-lg shadow-bt-thunder/30 animate-border-flash">
-          <span className="text-3xl">{activeEvent.type === 'bt_time' ? '☕' : '⚡'}</span>
           <div>
             <p className="font-bold text-bt-cream">
               {activeEvent.type === 'bt_time' ? 'BTtime' : 'BTfever'} 開催中！
             </p>
-            <p className="text-sm text-bt-gray">チームに通知が送られました 🍫</p>
+            <p className="text-sm text-bt-gray">チームに通知が送られました</p>
           </div>
         </div>
       )}
@@ -118,7 +117,6 @@ export default function ShopPage() {
       {/* プレゼント送信完了 */}
       {presentSent && (
         <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-4 flex items-center gap-3 shadow-lg shadow-bt-thunder/20">
-          <span className="text-2xl">🍫</span>
           <p className="font-medium text-bt-thunder">BTプレゼントを送りました！</p>
         </div>
       )}
@@ -236,7 +234,7 @@ export default function ShopPage() {
               disabled={!canAfford || confirming || (selected === 'present' && !toUserId)}
               className="flex-1 rounded-lg bg-bt-thunder py-2.5 text-sm font-bold text-bt-black disabled:opacity-40 hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/40"
             >
-              {confirming ? '処理中...' : '確定する ⚡'}
+              {confirming ? '処理中...' : '確定する'}
             </button>
           </div>
         </div>

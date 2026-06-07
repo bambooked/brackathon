@@ -254,7 +254,7 @@ export default function HomePage() {
               className={`px-5 py-2 text-sm font-medium transition-all
                 ${topTab === tab ? 'bg-bt-thunder text-bt-black font-bold' : 'hover:bg-bt-card-hover text-bt-gray'}`}
             >
-              {tab === 'feed' ? '📰 日報' : '🔍 人で探す'}
+              {tab === 'feed' ? '日報' : '人で探す'}
             </button>
           ))}
         </div>

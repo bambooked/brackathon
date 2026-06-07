@@ -78,7 +78,6 @@ export default function PostPage() {
   if (submitted) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <span className="text-5xl animate-pulse-thunder">⚡</span>
         <p className="text-xl font-bold text-bt-thunder">
           {isEditMode ? '更新しました！' : '投稿しました！'}
         </p>
@@ -97,7 +96,6 @@ export default function PostPage() {
 
         <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-5 space-y-3 shadow-lg shadow-bt-thunder/20">
           <div className="flex items-center gap-2">
-            <span className="text-xl">📋</span>
             <p className="font-bold text-bt-cream">今日の日報はすでに投稿済みです</p>
           </div>
           <p className="text-sm text-bt-gray whitespace-pre-wrap line-clamp-3">
@@ -119,7 +117,7 @@ export default function PostPage() {
             onClick={() => setIsEditing(true)}
             className="flex-1 rounded-lg bg-bt-thunder py-3 font-bold text-bt-black hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/30"
           >
-            修正する ✏️
+            修正する
           </button>
         </div>
       </div>
@@ -146,7 +144,7 @@ export default function PostPage() {
           }}
         >
           <div className="rounded-lg px-5 py-4">
-            <label htmlFor="post-datetime" className="block text-sm font-medium mb-2 text-bt-gray">📅 日時</label>
+            <label htmlFor="post-datetime" className="block text-sm font-medium mb-2 text-bt-gray">日時</label>
             <input
               id="post-datetime"
               type="datetime-local"
@@ -173,7 +171,7 @@ export default function PostPage() {
           }}
         >
           <div className="rounded-lg overflow-hidden">
-            <label htmlFor="post-content" className="block px-5 pt-4 text-sm font-medium text-bt-gray">📝 内容</label>
+            <label htmlFor="post-content" className="block px-5 pt-4 text-sm font-medium text-bt-gray">内容</label>
             <textarea
               id="post-content"
               aria-label="日報の本文"
@@ -210,7 +208,7 @@ export default function PostPage() {
           >
             {submitting
               ? isEditMode ? '更新中...' : '投稿中...'
-              : isEditMode ? '更新する ⚡' : '投稿する ⚡'}
+              : isEditMode ? '更新する' : '投稿する'}
           </button>
         </div>
       </form>
