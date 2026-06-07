@@ -128,63 +128,71 @@ export default function InvisibleTaskPage() {
       {/* 投稿フォーム */}
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-xl bg-bt-card p-5 shadow-lg shadow-bt-black/50 border border-bt-thunder/20"
+        className="space-y-4 rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+        style={{
+          backgroundImage: 'url(/blackthunder.png)',
+          backgroundSize: '130% 130%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
       >
-        <div>
-          <label htmlFor="target-member" className="block text-sm font-medium mb-1 text-bt-gray">誰のことを書く？</label>
-          <select
-            id="target-member"
-            aria-label="対象メンバー"
-            value={targetUserId}
-            onChange={(e) => setTargetUserId(e.target.value)}
-            className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-2.5 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all"
-          >
-            {SAMPLE_MEMBERS.map((m) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="invisible-content" className="block text-sm font-medium mb-1 text-bt-gray">どんなことをしてた？</label>
-          <textarea
-            id="invisible-content"
-            aria-label="見えない業務の内容"
-            value={content}
-            onChange={(e) => setContent(e.target.value.slice(0, MAX_LENGTH))}
-            placeholder={`例:\n・MTGの議事録を毎回丁寧にまとめてくれていた\n・誰も頼んでないのにコードレビューをしてくれていた\n・新メンバーのフォローを自主的にやってくれていた`}
-            className="w-full resize-none rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-3 text-sm leading-relaxed outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all placeholder:text-bt-gray-dark"
-            rows={5}
-          />
-          <p className="text-right text-xs text-bt-gray-dark mt-1">{content.length} / {MAX_LENGTH}</p>
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg border border-bt-thunder/20 bg-bt-black/20 px-4 py-3">
+        <div className="rounded-lg p-5 space-y-4">
           <div>
-            <p className="text-sm font-medium text-bt-cream">匿名で送る</p>
-            <p className="text-xs text-bt-gray-dark mt-0.5">
-              {anonymous ? '報告者名は「匿名さん」として表示されます' : `「${MY_NAME}」として表示されます`}
-            </p>
+            <label htmlFor="target-member" className="block text-sm font-medium mb-1 text-bt-gray">誰のことを書く？</label>
+            <select
+              id="target-member"
+              aria-label="対象メンバー"
+              value={targetUserId}
+              onChange={(e) => setTargetUserId(e.target.value)}
+              className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-2.5 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all"
+            >
+              {SAMPLE_MEMBERS.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
           </div>
+
+          <div>
+            <label htmlFor="invisible-content" className="block text-sm font-medium mb-1 text-bt-gray">どんなことをしてた？</label>
+            <textarea
+              id="invisible-content"
+              aria-label="見えない業務の内容"
+              value={content}
+              onChange={(e) => setContent(e.target.value.slice(0, MAX_LENGTH))}
+              placeholder={`例:\n・MTGの議事録を毎回丁寧にまとめてくれていた\n・誰も頼んでないのにコードレビューをしてくれていた\n・新メンバーのフォローを自主的にやってくれていた`}
+              className="w-full resize-none rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-3 text-sm leading-relaxed outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all placeholder:text-bt-gray-dark"
+              rows={5}
+            />
+            <p className="text-right text-xs text-bt-gray mt-1">{content.length} / {MAX_LENGTH}</p>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-bt-thunder/30 bg-bt-black/20 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-bt-cream">匿名で送る</p>
+              <p className="text-xs text-bt-gray mt-0.5">
+                {anonymous ? '報告者名は「匿名さん」として表示されます' : `「${MY_NAME}」として表示されます`}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="匿名送信"
+              aria-checked={anonymous}
+              onClick={() => setAnonymous((v) => !v)}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${anonymous ? 'bg-bt-thunder' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${anonymous ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
           <button
-            type="button"
-            role="switch"
-            aria-label="匿名送信"
-            aria-checked={anonymous}
-            onClick={() => setAnonymous((v) => !v)}
-            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${anonymous ? 'bg-bt-thunder' : 'bg-bt-gray-dark/40'}`}
+            type="submit"
+            disabled={!content.trim() || submitting}
+            className="w-full rounded-lg bg-bt-thunder py-3 font-bold text-bt-black disabled:opacity-40 hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/30"
           >
-            <span className={`inline-block h-5 w-5 rounded-full bg-bt-cream shadow transition-transform mt-0.5 ${anonymous ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            {submitting ? '🤖 AIが判定中...' : '送信してPTを贈る ⚡'}
           </button>
         </div>
-
-        <button
-          type="submit"
-          disabled={!content.trim() || submitting}
-          className="w-full rounded-lg bg-bt-thunder py-3 font-bold text-bt-black disabled:opacity-40 hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/30"
-        >
-          {submitting ? '🤖 AIが判定中...' : '送信してPTを贈る ⚡'}
-        </button>
       </form>
 
       {/* AI判定結果 */}
@@ -211,19 +219,30 @@ export default function InvisibleTaskPage() {
         ) : (
           <ul className="space-y-3">
             {myIncoming.map((record) => (
-              <li key={record.id} className="rounded-xl bg-bt-card p-4 shadow-lg shadow-bt-black/50 border border-bt-thunder/20">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-bt-thunder/20 px-2 py-0.5 text-xs font-bold text-bt-thunder">
-                      +{record.ptAwarded} PT
-                    </span>
-                    <span className="text-xs text-bt-gray-dark">
-                      {record.reporterName ?? '匿名さん'} より
-                    </span>
+              <li
+                key={record.id}
+                className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+                style={{
+                  backgroundImage: 'url(/blackthunder.png)',
+                  backgroundSize: '130% 130%',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                }}
+              >
+                <div className="rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-bt-thunder/20 px-2 py-0.5 text-xs font-bold text-bt-thunder">
+                        +{record.ptAwarded} PT
+                      </span>
+                      <span className="text-xs text-bt-gray">
+                        {record.reporterName ?? '匿名さん'} より
+                      </span>
+                    </div>
+                    <span className="text-xs text-bt-gray">{formatDate(record.reportedAt)}</span>
                   </div>
-                  <span className="text-xs text-bt-gray-dark">{formatDate(record.reportedAt)}</span>
+                  <p className="text-sm text-bt-cream leading-relaxed">{record.content}</p>
                 </div>
-                <p className="text-sm text-bt-gray leading-relaxed">{record.content}</p>
               </li>
             ))}
           </ul>

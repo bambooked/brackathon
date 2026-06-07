@@ -134,30 +134,40 @@ export default function ShopPage() {
               key={item.id}
               onClick={() => setSelected(isSelected ? null : (item.id as ShopItemType))}
               disabled={!affordable}
-              className={`w-full rounded-xl p-5 text-left border-2 transition-all transform
+              className={`w-full rounded-xl overflow-hidden text-left transition-all transform shadow-lg p-3 border-4
                 ${isSelected
-                  ? 'border-bt-thunder bg-bt-thunder/20 shadow-xl shadow-bt-thunder/40 scale-105'
+                  ? 'shadow-bt-thunder/40 scale-105 border-bt-thunder'
                   : affordable
                   ? isPresent
-                    ? 'border-bt-thunder bg-bt-card hover:border-bt-thunder hover:bg-bt-thunder/10 hover:scale-105 shadow-lg shadow-bt-thunder/20'
-                    : 'border-bt-thunder/30 bg-bt-card hover:border-bt-thunder hover:bg-bt-thunder/10 hover:scale-102 shadow-lg shadow-bt-black/50'
-                  : 'border-bt-gray-dark/20 bg-bt-card/50 opacity-50 cursor-not-allowed'
+                    ? 'hover:scale-105 shadow-bt-thunder/20 hover:shadow-bt-thunder/40 border-bt-thunder'
+                    : 'hover:scale-102 shadow-bt-black/50 hover:shadow-bt-thunder/30 border-bt-thunder'
+                  : 'opacity-50 cursor-not-allowed shadow-bt-black/30 border-bt-gray-dark/30'
                 }`}
+              style={affordable ? {
+                backgroundImage: 'url(/blackthunder.png)',
+                backgroundSize: '130% 130%',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              } : {
+                backgroundColor: '#333',
+              }}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="text-3xl">{item.icon}</span>
-                  <div>
-                    <p className={`font-bold ${affordable ? 'text-bt-cream' : 'text-bt-gray-dark'}`}>{item.title}</p>
-                    <p className={`text-sm mt-0.5 ${affordable ? 'text-bt-gray' : 'text-bt-gray-dark/60'}`}>{item.description}</p>
+              <div className={`rounded-lg p-5 ${isSelected ? 'bg-bt-thunder/30' : ''}`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">{item.icon}</span>
+                    <div>
+                      <p className={`font-bold ${affordable ? 'text-bt-cream' : 'text-bt-gray-dark'}`}>{item.title}</p>
+                      <p className={`text-sm mt-0.5 ${affordable ? 'text-bt-gray' : 'text-bt-gray-dark/60'}`}>{item.description}</p>
+                    </div>
                   </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-bold whitespace-nowrap
+                      ${affordable ? 'bg-bt-thunder text-bt-black' : 'bg-bt-gray-dark/30 text-bt-gray-dark'}`}
+                  >
+                    {item.cost} PT
+                  </span>
                 </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-sm font-bold whitespace-nowrap
-                    ${affordable ? 'bg-bt-thunder text-bt-black' : 'bg-bt-gray-dark/30 text-bt-gray-dark'}`}
-                >
-                  {item.cost} PT
-                </span>
               </div>
             </button>
           )

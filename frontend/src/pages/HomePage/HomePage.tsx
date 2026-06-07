@@ -74,53 +74,65 @@ function ReportCard({ report, currentUserId, onReact, onSelectAuthor, showDate =
   const color = avatarColor(report.authorId)
   const isOwn = report.authorId === currentUserId
   return (
-    <li className="rounded-xl bg-bt-card shadow-lg shadow-bt-black/50 border border-bt-thunder/20 overflow-hidden hover:border-bt-thunder/40 transition-all">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-bt-thunder/10 bg-bt-black/30">
-        <button
-          onClick={() => onSelectAuthor?.(report.authorId, report.authorName)}
-          disabled={!onSelectAuthor}
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-bold ${color} ${onSelectAuthor ? 'hover:ring-2 hover:ring-bt-thunder transition-all cursor-pointer' : ''}`}
-          aria-label={onSelectAuthor ? `${report.authorName}の日報を見る` : undefined}
-        >
-          {report.authorName[0]}
-        </button>
-        <div className="flex-1 min-w-0">
+    <li
+      className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden hover:shadow-bt-thunder/30 transition-all border-4 border-bt-thunder"
+      style={{
+        backgroundImage: 'url(/blackthunder.png)',
+        backgroundSize: '130% 130%',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="p-3">
+        <div className="rounded-lg overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-bt-thunder/20">
           <button
             onClick={() => onSelectAuthor?.(report.authorId, report.authorName)}
             disabled={!onSelectAuthor}
-            className={`text-base font-bold leading-tight text-bt-cream ${onSelectAuthor ? 'hover:text-bt-thunder transition-colors cursor-pointer' : ''}`}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-bold ${color} ${onSelectAuthor ? 'hover:ring-2 hover:ring-bt-thunder transition-all cursor-pointer' : ''}`}
+            aria-label={onSelectAuthor ? `${report.authorName}の日報を見る` : undefined}
           >
-            {report.authorName}
+            {report.authorName[0]}
           </button>
-          <p className="text-xs text-bt-gray-dark mt-0.5">
-            {showDate ? formatCardDate(report.createdAt) : formatTime(report.createdAt)}
-          </p>
-        </div>
-      </div>
-      <div className="px-5 py-4">
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-bt-gray">{report.content}</p>
-      </div>
-      <div className="flex items-center gap-2 flex-wrap px-5 pb-4">
-        {REACTION_EMOJIS.map((emoji) => {
-          const count = report.reactions.filter((r) => r.emoji === emoji).length
-          const reacted = report.reactions.some((r) => r.emoji === emoji && r.userId === currentUserId)
-          return (
+          <div className="flex-1 min-w-0">
             <button
-              key={emoji}
-              onClick={() => onReact(report.id, emoji)}
-              disabled={isOwn}
-              title={isOwn ? '自分の日報にはリアクションできません' : undefined}
-              className={`flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-all transform
-                ${isOwn ? 'opacity-40 cursor-not-allowed border-bt-gray-dark/30' :
-                  reacted ? 'border-bt-thunder bg-bt-thunder/20 font-semibold text-bt-thunder scale-105 shadow-lg shadow-bt-thunder/30' :
-                  count > 0 ? 'border-bt-gold bg-bt-gold/10 font-semibold text-bt-gold hover:scale-105' :
-                  'border-bt-gray-dark/30 text-bt-gray hover:border-bt-thunder hover:bg-bt-thunder/10 hover:text-bt-thunder hover:scale-105'}`}
+              onClick={() => onSelectAuthor?.(report.authorId, report.authorName)}
+              disabled={!onSelectAuthor}
+              className={`text-base font-bold leading-tight text-bt-cream ${onSelectAuthor ? 'hover:text-bt-thunder transition-colors cursor-pointer' : ''}`}
             >
-              {emoji}
-              {count > 0 && <span className="text-xs font-bold">{count}</span>}
+              {report.authorName}
             </button>
-          )
-        })}
+            <p className="text-xs text-bt-gray-dark mt-0.5">
+              {showDate ? formatCardDate(report.createdAt) : formatTime(report.createdAt)}
+            </p>
+          </div>
+        </div>
+        <div className="px-5 py-4">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-bt-cream">{report.content}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap px-5 pb-4">
+          {REACTION_EMOJIS.map((emoji) => {
+            const count = report.reactions.filter((r) => r.emoji === emoji).length
+            const reacted = report.reactions.some((r) => r.emoji === emoji && r.userId === currentUserId)
+            return (
+              <button
+                key={emoji}
+                onClick={() => onReact(report.id, emoji)}
+                disabled={isOwn}
+                title={isOwn ? '自分の日報にはリアクションできません' : undefined}
+                className={`flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-all transform
+                  ${isOwn ? 'opacity-40 cursor-not-allowed border-bt-gray-dark/30' :
+                    reacted ? 'border-bt-thunder bg-bt-thunder/20 font-semibold text-bt-thunder scale-105 shadow-lg shadow-bt-thunder/30' :
+                    count > 0 ? 'border-bt-gold bg-bt-gold/10 font-semibold text-bt-gold hover:scale-105' :
+                    'border-bt-gray-dark/30 text-bt-gray hover:border-bt-thunder hover:bg-bt-thunder/10 hover:text-bt-thunder hover:scale-105'}`}
+              >
+                {emoji}
+                {count > 0 && <span className="text-xs font-bold">{count}</span>}
+              </button>
+            )
+          })}
+        </div>
+        </div>
       </div>
     </li>
   )

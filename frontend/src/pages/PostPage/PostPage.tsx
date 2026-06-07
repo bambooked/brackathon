@@ -136,42 +136,62 @@ export default function PostPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-xl bg-bt-card shadow-lg shadow-bt-black/50 border border-bt-thunder/20 px-5 py-4">
-          <label htmlFor="post-datetime" className="block text-sm font-medium mb-2 text-bt-gray">📅 日時</label>
-          <input
-            id="post-datetime"
-            type="datetime-local"
-            aria-label="日報の日時"
-            value={reportedAt}
-            onChange={(e) => setReportedAt(e.target.value)}
-            className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream px-3 py-2 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all"
-          />
-          {!isEditMode && (
-            <p className="text-xs text-bt-gray-dark mt-1.5">
-              過去の業務についても遡って投稿できます
-            </p>
-          )}
+        <div
+          className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+          style={{
+            backgroundImage: 'url(/blackthunder.png)',
+            backgroundSize: '130% 130%',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        >
+          <div className="rounded-lg px-5 py-4">
+            <label htmlFor="post-datetime" className="block text-sm font-medium mb-2 text-bt-gray">📅 日時</label>
+            <input
+              id="post-datetime"
+              type="datetime-local"
+              aria-label="日報の日時"
+              value={reportedAt}
+              onChange={(e) => setReportedAt(e.target.value)}
+              className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream px-3 py-2 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all"
+            />
+            {!isEditMode && (
+              <p className="text-xs text-bt-gray mt-1.5">
+                過去の業務についても遡って投稿できます
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="rounded-xl bg-bt-card shadow-lg shadow-bt-black/50 border border-bt-thunder/20 overflow-hidden">
-          <label htmlFor="post-content" className="block px-5 pt-4 text-sm font-medium text-bt-gray">📝 内容</label>
-          <textarea
-            id="post-content"
-            aria-label="日報の本文"
-            value={content}
-            onChange={(e) => setContent(e.target.value.slice(0, MAX_LENGTH))}
-            placeholder={`今日やったこと、気づいたこと、ホウレンソウを書こう\n\n例:\n・○○機能の実装が完了\n・△△さんとDB設計をレビュー\n・来週は□□を予定`}
-            className="w-full resize-none px-5 pt-2 pb-4 text-sm leading-relaxed outline-none bg-bt-black/20 text-bt-cream placeholder:text-bt-gray-dark"
-            rows={10}
-          />
-          <div className="flex justify-end border-t border-bt-thunder/10 px-5 py-2 bg-bt-black/30">
-            <span
-              className={`text-xs font-mono ${
-                content.length >= MAX_LENGTH ? 'text-red-400' : 'text-bt-gray-dark'
-              }`}
-            >
-              {content.length} / {MAX_LENGTH}
-            </span>
+        <div
+          className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+          style={{
+            backgroundImage: 'url(/blackthunder.png)',
+            backgroundSize: '130% 130%',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        >
+          <div className="rounded-lg overflow-hidden">
+            <label htmlFor="post-content" className="block px-5 pt-4 text-sm font-medium text-bt-gray">📝 内容</label>
+            <textarea
+              id="post-content"
+              aria-label="日報の本文"
+              value={content}
+              onChange={(e) => setContent(e.target.value.slice(0, MAX_LENGTH))}
+              placeholder={`今日やったこと、気づいたこと、ホウレンソウを書こう\n\n例:\n・○○機能の実装が完了\n・△△さんとDB設計をレビュー\n・来週は□□を予定`}
+              className="w-full resize-none px-5 pt-2 pb-4 text-sm leading-relaxed outline-none bg-transparent text-bt-cream placeholder:text-bt-gray-dark"
+              rows={10}
+            />
+            <div className="flex justify-end border-t border-bt-thunder/20 px-5 py-2">
+              <span
+                className={`text-xs font-mono ${
+                  content.length >= MAX_LENGTH ? 'text-red-400' : 'text-bt-gray'
+                }`}
+              >
+                {content.length} / {MAX_LENGTH}
+              </span>
+            </div>
           </div>
         </div>
 
