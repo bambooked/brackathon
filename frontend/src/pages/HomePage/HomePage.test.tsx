@@ -76,8 +76,8 @@ import HomePage from './HomePage'
 describe('HomePage', () => {
   it('トップタブが表示される', async () => {
     renderPage()
-    expect(await screen.findByRole('button', { name: '📰 日報' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '🔍 人で探す' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: '日報' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '人で探す' })).toBeInTheDocument()
   })
 
   it('日報タブ: APIから取得した今日の日報が表示される', async () => {

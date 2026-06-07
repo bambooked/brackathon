@@ -103,16 +103,10 @@ async def get_current_user_info(current_user: CurrentUser = CURRENT_USER_DEP):
     user = await user_crud.get_user_by_email(current_user.email)
 
     if user is None:
-        # ストアにない場合は、トークンの情報から最小限のユーザー情報を返す
-        now = datetime.now(UTC).isoformat()
-        return CurrentUserResponse(
-            id=current_user.user_id,
-            name=current_user.name,
-            email=current_user.email,
-            role="member",
-            team_name=current_user.team_name,
-            created_at=now,
-            updated_at=now,
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="セッションが無効です。再ログインしてください。",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     return CurrentUserResponse(

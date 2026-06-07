@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 
@@ -113,12 +113,14 @@ async def trigger_bt_time(
             misfire_grace_time=60,
         )
 
+    ends_at = (fire_at + timedelta(minutes=15)).isoformat()
     return TriggerEventResponse(
         message=result["message"],
         event_type=result["event_type"],
         points_consumed=result["points_consumed"],
         transaction=PointTransaction(**result["transaction"]),
         user_balance=result["user_balance"],
+        ends_at=ends_at,
         scheduled_at=scheduled_at.isoformat() if scheduled_at and scheduled_at > now else None,
     )
 
@@ -146,6 +148,7 @@ async def trigger_bt_fever(current_user: CurrentUser = Depends(get_current_user)
         points_consumed=result["points_consumed"],
         transaction=PointTransaction(**result["transaction"]),
         user_balance=result["user_balance"],
+        ends_at=(datetime.now(UTC) + timedelta(minutes=60)).isoformat(),
     )
 
 

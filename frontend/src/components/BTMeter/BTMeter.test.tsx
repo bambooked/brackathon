@@ -25,6 +25,6 @@ describe('BTMeter', () => {
 
   it('満タンでフィーバー表示になる', () => {
     render(<BTMeter current={80} max={80} />)
-    expect(screen.getByText('⚡FEVER!⚡')).toBeInTheDocument()
+    expect(screen.getByText('FEVER!')).toBeInTheDocument()
   })
 })

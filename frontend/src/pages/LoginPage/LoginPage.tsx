@@ -71,30 +71,47 @@ export default function LoginPage() {
   }, [navigate, setAuth])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bt-dark px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-lg bg-bt-cream p-8 shadow-lg text-center">
-        <h1 className="text-2xl font-bold text-bt-dark">⚡ BT ログイン</h1>
-        <p className="text-sm text-bt-dark/60">Googleアカウントでログインしてください</p>
-        <label className="block text-left text-sm font-medium text-bt-dark/70" htmlFor="team-name">
-          チーム
-        </label>
-        <select
-          id="team-name"
-          aria-label="チーム"
-          value={selectedTeam}
-          onChange={handleTeamChange}
-          className="w-full rounded-lg border border-bt-dark/15 bg-white px-3 py-2 text-sm text-bt-dark outline-none focus:border-bt-gold"
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bt-dark px-4">
+      {/* BT包装紙風の背景装飾 */}
+      <div className="bt-zigzag-decoration bt-zigzag-left" />
+      <div className="bt-zigzag-decoration bt-zigzag-right" />
+      <div className="bt-thunder-center" />
+
+      <div className="relative z-10 w-full max-w-sm space-y-6 rounded-xl border-2 border-bt-thunder bg-bt-card p-8 text-center shadow-2xl shadow-bt-thunder/20">
+        <div className="flex justify-center mb-2">
+          <img
+            src="/blackathon_sticker-09_BTDD.png"
+            alt="BTアプリアイコン"
+            className="h-56 w-56 object-contain drop-shadow-xl"
+          />
+        </div>
+        <h1 className="font-black text-bt-thunder">BT ログイン</h1>
+        <p
+          className="text-sm font-black text-bt-gray"
+          style={{ fontFamily: 'var(--bt-display-font)' }}
         >
-          {TEAM_OPTIONS.map((team) => (
-            <option key={team} value={team}>
-              {team}
-            </option>
-          ))}
-        </select>
+          Googleアカウントでログインしてください
+        </p>
+        <div className="text-left space-y-1">
+          <label htmlFor="team-name" className="block text-xs font-black text-bt-gray" style={{ fontFamily: 'var(--bt-display-font)' }}>
+            チーム
+          </label>
+          <select
+            id="team-name"
+            aria-label="チーム"
+            value={selectedTeam}
+            onChange={handleTeamChange}
+            className="w-full rounded-lg border border-bt-thunder/30 bg-bt-dark px-3 py-2 text-sm text-bt-cream outline-none focus:border-bt-thunder"
+          >
+            {TEAM_OPTIONS.map((team) => (
+              <option key={team} value={team}>{team}</option>
+            ))}
+          </select>
+        </div>
         <div className="flex justify-center" ref={buttonRef} aria-label="Googleでログイン" />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400 bg-red-900/20 border border-red-400/30 rounded-lg px-3 py-2">{error}</p>}
         {!GOOGLE_CLIENT_ID && (
-          <p className="text-xs text-amber-700 bg-amber-50 rounded p-2">
+          <p className="text-xs text-amber-400 bg-amber-900/20 border border-amber-400/30 rounded p-2">
             VITE_GOOGLE_CLIENT_ID が未設定です
           </p>
         )}

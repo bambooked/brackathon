@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">こんにちは、{user?.name} さん⚡</h1>
+      <h1 className="text-2xl font-bold">こんにちは、{user?.name} さん</h1>
       <section className="rounded-lg bg-white p-6 shadow">
         <p className="text-sm text-bt-dark/60">あなたの保有ポイント</p>
         <p className="text-4xl font-bold text-bt-gold">{myPoints} PT</p>

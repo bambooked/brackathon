@@ -86,4 +86,5 @@ class TriggerEventResponse(BaseModel):
     points_consumed: int
     transaction: PointTransaction
     user_balance: int
+    ends_at: str | None = None        # イベント終了時刻
     scheduled_at: str | None = None  # Break Thunder のみ。即時発動の場合は None

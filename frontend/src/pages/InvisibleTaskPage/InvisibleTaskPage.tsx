@@ -118,8 +118,8 @@ export default function InvisibleTaskPage() {
     <div className="space-y-6">
       {/* ヘッダー */}
       <div>
-        <h1 className="text-2xl font-bold">見えない業務の見える化 🔍</h1>
-        <p className="text-sm text-bt-dark/50 mt-1">
+        <h1 className="text-2xl font-bold text-bt-cream">見えない業務の見える化</h1>
+        <p className="text-sm text-bt-gray-dark mt-1">
           チームメンバーの「誰も気づいていないがんばり」を書き込もう。
           AIが内容を判定してその人にPTを付与します。
         </p>
@@ -128,74 +128,81 @@ export default function InvisibleTaskPage() {
       {/* 投稿フォーム */}
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-xl bg-white p-5 shadow-sm border border-bt-dark/5"
+        className="space-y-4 rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+        style={{
+          backgroundImage: 'url(/blackthunder.png)',
+          backgroundSize: '130% 130%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
       >
-        <div>
-          <label htmlFor="target-member" className="block text-sm font-medium mb-1">誰のことを書く？</label>
-          <select
-            id="target-member"
-            aria-label="対象メンバー"
-            value={targetUserId}
-            onChange={(e) => setTargetUserId(e.target.value)}
-            className="w-full rounded-lg border border-bt-dark/15 p-2.5 text-sm"
-          >
-            {SAMPLE_MEMBERS.map((m) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="invisible-content" className="block text-sm font-medium mb-1">どんなことをしてた？</label>
-          <textarea
-            id="invisible-content"
-            aria-label="見えない業務の内容"
-            value={content}
-            onChange={(e) => setContent(e.target.value.slice(0, MAX_LENGTH))}
-            placeholder={`例:\n・MTGの議事録を毎回丁寧にまとめてくれていた\n・誰も頼んでないのにコードレビューをしてくれていた\n・新メンバーのフォローを自主的にやってくれていた`}
-            className="w-full resize-none rounded-lg border border-bt-dark/15 p-3 text-sm leading-relaxed outline-none focus:border-bt-gold"
-            rows={5}
-          />
-          <p className="text-right text-xs text-bt-dark/40 mt-1">{content.length} / {MAX_LENGTH}</p>
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg border border-bt-dark/10 px-4 py-3">
+        <div className="rounded-lg p-5 space-y-4">
           <div>
-            <p className="text-sm font-medium">匿名で送る</p>
-            <p className="text-xs text-bt-dark/40 mt-0.5">
-              {anonymous ? '報告者名は「匿名さん」として表示されます' : `「${MY_NAME}」として表示されます`}
-            </p>
+            <label htmlFor="target-member" className="block text-sm font-medium mb-1 text-bt-gray">誰のことを書く？</label>
+            <select
+              id="target-member"
+              aria-label="対象メンバー"
+              value={targetUserId}
+              onChange={(e) => setTargetUserId(e.target.value)}
+              className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-2.5 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all"
+            >
+              {SAMPLE_MEMBERS.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
           </div>
+
+          <div>
+            <label htmlFor="invisible-content" className="block text-sm font-medium mb-1 text-bt-gray">どんなことをしてた？</label>
+            <textarea
+              id="invisible-content"
+              aria-label="見えない業務の内容"
+              value={content}
+              onChange={(e) => setContent(e.target.value.slice(0, MAX_LENGTH))}
+              placeholder={`例:\n・MTGの議事録を毎回丁寧にまとめてくれていた\n・誰も頼んでないのにコードレビューをしてくれていた\n・新メンバーのフォローを自主的にやってくれていた`}
+              className="w-full resize-none rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-3 text-sm leading-relaxed outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all placeholder:text-bt-gray-dark"
+              rows={5}
+            />
+            <p className="text-right text-xs text-bt-gray mt-1">{content.length} / {MAX_LENGTH}</p>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-bt-thunder/30 bg-bt-black/20 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-bt-cream">匿名で送る</p>
+              <p className="text-xs text-bt-gray mt-0.5">
+                {anonymous ? '報告者名は「匿名さん」として表示されます' : `「${MY_NAME}」として表示されます`}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="匿名送信"
+              aria-checked={anonymous}
+              onClick={() => setAnonymous((v) => !v)}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${anonymous ? 'bg-bt-thunder' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${anonymous ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
           <button
-            type="button"
-            role="switch"
-            aria-label="匿名送信"
-            aria-checked={anonymous}
-            onClick={() => setAnonymous((v) => !v)}
-            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${anonymous ? 'bg-bt-gold' : 'bg-bt-dark/20'}`}
+            type="submit"
+            disabled={!content.trim() || submitting}
+            className="w-full rounded-lg bg-bt-thunder py-3 font-bold text-bt-black disabled:opacity-40 hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/30"
           >
-            <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${anonymous ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            {submitting ? 'AIが判定中...' : '送信してPTを贈る'}
           </button>
         </div>
-
-        <button
-          type="submit"
-          disabled={!content.trim() || submitting}
-          className="w-full rounded-lg bg-bt-gold py-3 font-bold text-bt-dark disabled:opacity-40 hover:brightness-105 transition-all"
-        >
-          {submitting ? '🤖 AIが判定中...' : '送信してPTを贈る ⚡'}
-        </button>
       </form>
 
       {/* AI判定結果 */}
       {aiResult && (
-        <div className="rounded-xl bg-green-50 border border-green-200 p-5 flex items-start gap-4">
-          <span className="text-3xl">🤖</span>
+        <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-5 flex items-start gap-4 shadow-lg shadow-bt-thunder/20">
           <div>
-            <p className="font-bold text-green-700">AIが判定しました！</p>
-            <p className="text-sm text-green-600 mt-1">
+            <p className="font-bold text-bt-thunder">AIが判定しました！</p>
+            <p className="text-sm text-bt-cream mt-1">
               <span className="font-semibold">{aiResult.targetName}</span> さんに{' '}
-              <span className="text-lg font-bold">+{aiResult.ptAwarded} PT</span> を付与しました
+              <span className="text-lg font-bold text-bt-thunder">+{aiResult.ptAwarded} PT</span> を付与しました
             </p>
           </div>
         </div>
@@ -203,27 +210,38 @@ export default function InvisibleTaskPage() {
 
       {/* 自分への報告 */}
       <section>
-        <h2 className="font-bold text-bt-dark/70 text-sm uppercase tracking-wide mb-3">
-          自分への報告 🎉
+        <h2 className="font-bold text-bt-thunder text-sm uppercase tracking-wide mb-3">
+          自分への報告
         </h2>
         {myIncoming.length === 0 ? (
-          <p className="text-center text-bt-dark/30 text-sm py-6">まだ報告はありません</p>
+          <p className="text-center text-bt-gray-dark text-sm py-6">まだ報告はありません</p>
         ) : (
           <ul className="space-y-3">
             {myIncoming.map((record) => (
-              <li key={record.id} className="rounded-xl bg-white p-4 shadow-sm border border-bt-dark/5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">
-                      +{record.ptAwarded} PT
-                    </span>
-                    <span className="text-xs text-bt-dark/50">
-                      {record.reporterName ?? '匿名さん'} より
-                    </span>
+              <li
+                key={record.id}
+                className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+                style={{
+                  backgroundImage: 'url(/blackthunder.png)',
+                  backgroundSize: '130% 130%',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                }}
+              >
+                <div className="rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-bt-thunder/20 px-2 py-0.5 text-xs font-bold text-bt-thunder">
+                        +{record.ptAwarded} PT
+                      </span>
+                      <span className="text-xs text-bt-gray">
+                        {record.reporterName ?? '匿名さん'} より
+                      </span>
+                    </div>
+                    <span className="text-xs text-bt-gray">{formatDate(record.reportedAt)}</span>
                   </div>
-                  <span className="text-xs text-bt-dark/40">{formatDate(record.reportedAt)}</span>
+                  <p className="text-sm text-bt-cream leading-relaxed">{record.content}</p>
                 </div>
-                <p className="text-sm text-bt-dark/80 leading-relaxed">{record.content}</p>
               </li>
             ))}
           </ul>

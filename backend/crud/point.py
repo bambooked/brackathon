@@ -11,14 +11,9 @@ BT_FEVER_COST = 150
 
 
 async def _ensure_user(user_id: int) -> User:
-    user, _ = await User.get_or_create(
-        id=user_id,
-        defaults={
-            "email": f"user{user_id}@local.invalid",
-            "name": f"User {user_id}",
-            "team_name": "チームA",
-        },
-    )
+    user = await User.get_or_none(id=user_id)
+    if user is None:
+        raise ValueError(f"ユーザーが見つかりません (id={user_id})")
     return user
 
 

@@ -34,7 +34,7 @@ describe('LoginPage', () => {
 
   it('ログインページのタイトルを表示する', () => {
     renderLogin()
-    expect(screen.getByText('⚡ BT ログイン')).toBeInTheDocument()
+    expect(screen.getByText('BT ログイン')).toBeInTheDocument()
   })
 
   it('Googleログインの説明文を表示する', () => {

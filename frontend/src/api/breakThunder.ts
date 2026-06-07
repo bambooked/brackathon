@@ -58,9 +58,9 @@ export async function fetchBreakThunderMessages(): Promise<{
   active: BreakThunderActive
   messages: BreakThunderMessage[]
 }> {
-  const res = await request<BackendActive & { messages: BackendMessage[] }>('/break-thunder/messages')
+  const res = await request<{ active: BackendActive; messages: BackendMessage[] }>('/break-thunder/messages')
   return {
-    active: mapActive(res),
+    active: mapActive(res.active),
     messages: res.messages.map(mapMessage),
   }
 }

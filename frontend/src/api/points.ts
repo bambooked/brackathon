@@ -20,6 +20,7 @@ interface TriggerEventBackendResponse {
   points_consumed: number
   transaction: BackendTransaction
   user_balance: number
+  ends_at: string
   scheduled_at: string | null
 }
 
@@ -82,18 +83,13 @@ export async function startEvent(
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  const isScheduled = res.scheduled_at != null
-  const endsAt = isScheduled
-    ? new Date(new Date(res.scheduled_at!).getTime() + 30 * 60_000).toISOString()
-    : new Date(Date.now() + (isBreakThunder ? 15 : 60) * 60_000).toISOString()
-
   return {
     id: String(res.transaction.id),
     type: isBreakThunder ? 'break_thunder' : type,
     hostId: String(res.transaction.user_id),
     startedAt: res.transaction.created_at,
-    endsAt,
-    active: !isScheduled,
+    endsAt: res.ends_at,
+    active: res.scheduled_at == null,
     scheduledAt: res.scheduled_at,
   }
 }
