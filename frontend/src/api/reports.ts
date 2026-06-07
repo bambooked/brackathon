@@ -115,3 +115,10 @@ export async function addReaction(reportId: string, emoji: string): Promise<Reac
     emoji: res.reaction.type,
   }
 }
+
+export async function removeReaction(reportId: string, emoji: string): Promise<void> {
+  await request<{ message: string }>(
+    `/reports/${reportId}/react?type=${encodeURIComponent(emoji)}`,
+    { method: 'DELETE' },
+  )
+}

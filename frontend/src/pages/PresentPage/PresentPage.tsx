@@ -34,7 +34,7 @@ export default function PresentPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">BTプレゼント ⚡</h1>
+      <h1 className="text-2xl font-bold">BTプレゼント</h1>
       <p className="text-sm text-bt-dark/60">頑張った仲間に BT を渡そう</p>
 
       <form onSubmit={handleSend} className="space-y-3">

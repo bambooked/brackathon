@@ -80,6 +80,8 @@ class TriggerEventResponse(BaseModel):
     points_consumed: int
     transaction: PointTransaction
     user_balance: int
+    ends_at: str
+    scheduled_at: str | None = None
 
 
 class ActiveEventResponse(BaseModel):

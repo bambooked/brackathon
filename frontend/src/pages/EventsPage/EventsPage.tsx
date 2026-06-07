@@ -24,7 +24,7 @@ export default function EventsPage() {
           onClick={() => handleStart('bt_time')}
           className="rounded-lg bg-white p-6 text-left shadow hover:ring-2 hover:ring-bt-gold"
         >
-          <p className="text-lg font-bold">☕ BTtime</p>
+          <p className="text-lg font-bold">BTtime</p>
           <p className="text-sm text-bt-dark/60">作業休憩 + 臨時掲示板</p>
           <p className="mt-2 text-sm">消費 {POINT_COST.BT_TIME} PT</p>
         </button>
@@ -33,7 +33,7 @@ export default function EventsPage() {
           onClick={() => handleStart('bt_fever')}
           className="rounded-lg bg-white p-6 text-left shadow hover:ring-2 hover:ring-bt-gold"
         >
-          <p className="text-lg font-bold">⚡ BTfever</p>
+          <p className="text-lg font-bold">BTfever</p>
           <p className="text-sm text-bt-dark/60">対面コミュニケーションタイム</p>
           <p className="mt-2 text-sm">消費 {POINT_COST.BT_FEVER} PT</p>
         </button>

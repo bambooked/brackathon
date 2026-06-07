@@ -7,7 +7,7 @@
 from datetime import UTC, datetime, timedelta
 
 EVENT_DURATION_MINUTES = {
-    "time": 30,
+    "time": 15,
     "fever": 60,
 }
 

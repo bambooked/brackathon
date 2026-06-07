@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from db.config import close_db, init_db
-from routers import auth, points, reports
+from routers import auth, break_thunder, events, points, reports
 
 
 @asynccontextmanager
@@ -49,6 +49,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(points.router)
 app.include_router(reports.router)
+app.include_router(events.router)
+app.include_router(break_thunder.router)
 
 
 @app.get("/")

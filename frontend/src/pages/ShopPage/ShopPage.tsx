@@ -10,23 +10,23 @@ const FALLBACK_MEMBERS: TeamMember[] = []
 const SHOP_ITEMS = [
   {
     id: 'present',
-    icon: '🍫',
+    icon: '',
     title: 'BTプレゼント',
     description: '頑張った仲間にブラックサンダーを1個プレゼント',
     cost: POINT_COST.PRESENT,
     type: 'present' as const,
   },
   {
-    id: 'bt_time',
+    id: 'break_thunder',
     icon: '☕',
-    title: 'BTtime',
+    title: 'Break Thunder',
     description: 'ブラックサンダーを食べながら作業休憩タイム！臨時掲示板も開設',
     cost: POINT_COST.BT_TIME,
-    type: 'bt_time' as const,
+    type: 'break_thunder' as const,
   },
   {
     id: 'bt_fever',
-    icon: '⚡',
+    icon: '',
     title: 'BTfever',
     description: 'チーム全員でブラックサンダーを食べながら対面コミュニケーション！',
     cost: POINT_COST.BT_FEVER,
@@ -34,7 +34,12 @@ const SHOP_ITEMS = [
   },
 ]
 
-type ShopItemType = 'present' | 'bt_time' | 'bt_fever'
+type ShopItemType = 'present' | 'break_thunder' | 'bt_fever'
+
+/** datetime-local の値（"YYYY-MM-DDThh:mm"）を ISO8601 UTC 文字列に変換する */
+function toISOString(localDatetime: string): string {
+  return new Date(localDatetime).toISOString()
+}
 
 export default function ShopPage() {
   const { user } = useAuth()
@@ -43,7 +48,9 @@ export default function ShopPage() {
   const [selected, setSelected] = useState<ShopItemType | null>(null)
   const [toUserId, setToUserId] = useState('')
   const [message, setMessage] = useState('')
-  const [activeEvent, setActiveEvent] = useState<BTEvent | null>(null)
+  const [scheduledAt, setScheduledAt] = useState('')
+  const [breakThunderMode, setBreakThunderMode] = useState<'now' | 'schedule'>('now')
+  const [activeEvent, setActiveEvent] = useState<(BTEvent & { scheduledAt: string | null }) | null>(null)
   const [presentSent, setPresentSent] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -52,7 +59,6 @@ export default function ShopPage() {
     fetchMyPoints().then(setMyPoints).catch(() => {/* フォールバック */})
     fetchUsers()
       .then((users) => {
-        // 自分自身を除外する
         const others = users.filter((u) => u.id !== user?.id)
         setMembers(others)
         if (others.length > 0) setToUserId(others[0].id)
@@ -72,9 +78,15 @@ export default function ShopPage() {
         setMessage('')
         setSelected(null)
       } else {
-        const event = await startEvent(selected)
-        setMyPoints((p) => p - (selected === 'bt_time' ? POINT_COST.BT_TIME : POINT_COST.BT_FEVER))
+        const isoScheduledAt =
+          selected === 'break_thunder' && breakThunderMode === 'schedule' && scheduledAt
+            ? toISOString(scheduledAt)
+            : undefined
+        const event = await startEvent(selected, isoScheduledAt)
+        setMyPoints((p) => p - (selected === 'break_thunder' ? POINT_COST.BT_TIME : POINT_COST.BT_FEVER))
         setActiveEvent(event)
+        setScheduledAt('')
+        setBreakThunderMode('now')
         setSelected(null)
       }
     } catch (err) {
@@ -93,33 +105,47 @@ export default function ShopPage() {
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">BTショップ</h1>
-          <p className="text-sm text-bt-dark/50 mt-0.5">ポイントを使ってイベントを発動しよう</p>
+          <h1 className="text-2xl font-bold text-bt-cream">BTショップ</h1>
+          <p className="text-sm text-bt-gray-dark mt-0.5">ポイントを使ってイベントを発動しよう</p>
         </div>
-        <div className="rounded-xl bg-bt-gold/20 px-4 py-2 text-center">
-          <p className="text-xs text-bt-dark/50">所持PT</p>
-          <p className="text-2xl font-bold text-bt-gold">{myPoints}</p>
+        <div className="rounded-xl bg-bt-card border-2 border-bt-thunder px-4 py-2 text-center shadow-lg shadow-bt-thunder/30 animate-pulse-thunder">
+          <p className="text-xs text-bt-gray-dark">所持PT</p>
+          <p className="text-2xl font-bold text-bt-thunder">{myPoints}</p>
         </div>
       </div>
 
-      {/* 発動中イベント */}
+      {/* 発動・予約完了バナー */}
       {activeEvent && (
-        <div className="rounded-xl bg-bt-gold/20 border border-bt-gold p-4 flex items-center gap-3">
-          <span className="text-3xl">{activeEvent.type === 'bt_time' ? '☕' : '⚡'}</span>
+        <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-4 flex items-center gap-3 shadow-lg shadow-bt-thunder/30 animate-border-flash">
+          <span className="text-3xl">{activeEvent.type === 'break_thunder' || activeEvent.type === 'bt_time' ? '☕' : '⚡'}</span>
           <div>
-            <p className="font-bold">
-              {activeEvent.type === 'bt_time' ? 'BTtime' : 'BTfever'} 開催中！
-            </p>
-            <p className="text-sm text-bt-dark/60">チームに通知が送られました 🍫</p>
+            {activeEvent.scheduledAt ? (
+              <>
+                <p className="font-bold text-bt-cream">
+                  {activeEvent.type === 'break_thunder' || activeEvent.type === 'bt_time' ? 'Break Thunder' : 'BTfever'} を予約しました！
+                </p>
+                <p className="text-sm text-bt-gray">
+                  {new Date(activeEvent.scheduledAt).toLocaleString('ja-JP', {
+                    month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                  })} に通知が送られます
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-bold text-bt-cream">
+                  {activeEvent.type === 'break_thunder' || activeEvent.type === 'bt_time' ? 'Break Thunder' : 'BTfever'} 開催中！
+                </p>
+                <p className="text-sm text-bt-gray">チームに通知が送られました</p>
+              </>
+            )}
           </div>
         </div>
       )}
 
       {/* プレゼント送信完了 */}
       {presentSent && (
-        <div className="rounded-xl bg-green-50 border border-green-200 p-4 flex items-center gap-3">
-          <span className="text-2xl">🍫</span>
-          <p className="font-medium text-green-700">BTプレゼントを送りました！</p>
+        <div className="rounded-xl bg-bt-thunder/20 border-2 border-bt-thunder p-4 flex items-center gap-3 shadow-lg shadow-bt-thunder/20">
+          <p className="font-medium text-bt-thunder">BTプレゼントを送りました！</p>
         </div>
       )}
 
@@ -128,33 +154,46 @@ export default function ShopPage() {
         {SHOP_ITEMS.map((item) => {
           const affordable = myPoints >= item.cost
           const isSelected = selected === item.id
+          const isPresent = item.id === 'present'
           return (
             <button
               key={item.id}
               onClick={() => setSelected(isSelected ? null : (item.id as ShopItemType))}
               disabled={!affordable}
-              className={`w-full rounded-xl p-5 text-left border-2 transition-all
+              className={`w-full rounded-xl overflow-hidden text-left transition-all transform shadow-lg p-3 border-4
                 ${isSelected
-                  ? 'border-bt-gold bg-bt-gold/10'
+                  ? 'shadow-bt-thunder/40 scale-105 border-bt-thunder'
                   : affordable
-                  ? 'border-bt-dark/10 bg-white hover:border-bt-gold/50 hover:bg-bt-gold/5'
-                  : 'border-bt-dark/5 bg-white/50 opacity-50 cursor-not-allowed'
+                  ? isPresent
+                    ? 'hover:scale-105 shadow-bt-thunder/20 hover:shadow-bt-thunder/40 border-bt-thunder'
+                    : 'hover:scale-102 shadow-bt-black/50 hover:shadow-bt-thunder/30 border-bt-thunder'
+                  : 'opacity-50 cursor-not-allowed shadow-bt-black/30 border-bt-gray-dark/30'
                 }`}
+              style={affordable ? {
+                backgroundImage: 'url(/blackthunder.png)',
+                backgroundSize: '130% 130%',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              } : {
+                backgroundColor: '#333',
+              }}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="text-3xl">{item.icon}</span>
-                  <div>
-                    <p className="font-bold">{item.title}</p>
-                    <p className="text-sm text-bt-dark/60 mt-0.5">{item.description}</p>
+              <div className={`rounded-lg p-5 ${isSelected ? 'bg-bt-thunder/30' : ''}`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">{item.icon}</span>
+                    <div>
+                      <p className={`font-bold ${affordable ? 'text-bt-cream' : 'text-bt-gray-dark'}`}>{item.title}</p>
+                      <p className={`text-sm mt-0.5 ${affordable ? 'text-bt-gray' : 'text-bt-gray-dark/60'}`}>{item.description}</p>
+                    </div>
                   </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-bold whitespace-nowrap
+                      ${affordable ? 'bg-bt-thunder text-bt-black' : 'bg-bt-gray-dark/30 text-bt-gray-dark'}`}
+                  >
+                    {item.cost} PT
+                  </span>
                 </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-sm font-bold whitespace-nowrap
-                    ${affordable ? 'bg-bt-gold text-bt-dark' : 'bg-bt-dark/10 text-bt-dark/40'}`}
-                >
-                  {item.cost} PT
-                </span>
               </div>
             </button>
           )
@@ -163,67 +202,124 @@ export default function ShopPage() {
 
       {/* 確認パネル */}
       {selected && selectedItem && (
-        <div className="rounded-xl bg-white border border-bt-gold/30 p-5 space-y-4 shadow-sm">
-          <h2 className="font-bold">
+        <div className="rounded-xl bg-bt-card border-2 border-bt-thunder p-5 space-y-4 shadow-xl shadow-bt-thunder/30">
+          <h2 className="font-bold text-bt-cream">
             {selectedItem.icon} {selectedItem.title} を使う
           </h2>
 
           {selected === 'present' && (
             <>
               <div>
-                <label htmlFor="shop-recipient" className="block text-sm font-medium mb-1">送る相手</label>
+                <label htmlFor="shop-recipient" className="block text-sm font-medium mb-1 text-bt-gray">送る相手</label>
                 <select
                   id="shop-recipient"
                   aria-label="送る相手"
                   value={toUserId}
                   onChange={(e) => setToUserId(e.target.value)}
-                  className="w-full rounded-lg border border-bt-dark/15 p-2.5 text-sm"
+                  className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-2.5 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all"
                 >
                   {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
+                    <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label htmlFor="shop-message" className="block text-sm font-medium mb-1">ひとことメッセージ (任意)</label>
+                <label htmlFor="shop-message" className="block text-sm font-medium mb-1 text-bt-gray">ひとことメッセージ (任意)</label>
                 <input
                   id="shop-message"
                   aria-label="メッセージ"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="お疲れ様！"
-                  className="w-full rounded-lg border border-bt-dark/15 p-2.5 text-sm"
+                  className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-2.5 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all placeholder:text-bt-gray-dark"
                 />
               </div>
             </>
           )}
 
-          <div className="flex items-center justify-between text-sm text-bt-dark/60 bg-bt-dark/3 rounded-lg px-3 py-2">
+          {selected === 'break_thunder' && (
+            <div className="space-y-3">
+              <div className="flex rounded-lg border border-bt-thunder/30 overflow-hidden text-sm font-bold">
+                <button
+                  type="button"
+                  onClick={() => setBreakThunderMode('now')}
+                  className={`flex-1 py-2 transition-colors ${
+                    breakThunderMode === 'now'
+                      ? 'bg-bt-thunder text-bt-black'
+                      : 'bg-bt-black/20 text-bt-gray hover:bg-bt-thunder/10'
+                  }`}
+                >
+                  ☕ 今すぐ発動
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBreakThunderMode('schedule')}
+                  className={`flex-1 py-2 transition-colors ${
+                    breakThunderMode === 'schedule'
+                      ? 'bg-bt-thunder text-bt-black'
+                      : 'bg-bt-black/20 text-bt-gray hover:bg-bt-thunder/10'
+                  }`}
+                >
+                  🕐 時刻を予約
+                </button>
+              </div>
+
+              {breakThunderMode === 'now' && (
+                <p className="text-sm text-bt-gray bg-bt-black/20 rounded-lg px-3 py-2">
+                  確定するとチームメンバー全員に即時通知が届きます。
+                </p>
+              )}
+
+              {breakThunderMode === 'schedule' && (
+                <div>
+                  <label htmlFor="shop-scheduled-at" className="block text-sm font-medium mb-1 text-bt-gray">
+                    通知時刻
+                  </label>
+                  <input
+                    id="shop-scheduled-at"
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream p-2.5 text-sm outline-none focus:border-bt-thunder"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between text-sm text-bt-gray bg-bt-black/30 rounded-lg px-3 py-2">
             <span>消費ポイント</span>
-            <span className="font-bold text-bt-dark">
+            <span className="font-bold text-bt-thunder">
               {myPoints} PT → {myPoints - selectedItem.cost} PT
             </span>
           </div>
 
           {errorMsg && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{errorMsg}</p>
+            <p className="text-sm text-red-400 bg-red-900/20 border border-red-400/30 rounded-lg px-3 py-2">{errorMsg}</p>
           )}
 
           <div className="flex gap-3">
             <button
-              onClick={() => { setSelected(null); setErrorMsg('') }}
-              className="flex-1 rounded-lg border border-bt-dark/20 py-2.5 text-sm font-medium text-bt-dark/60 hover:bg-bt-dark/5"
+              onClick={() => { setSelected(null); setScheduledAt(''); setBreakThunderMode('now'); setErrorMsg('') }}
+              className="flex-1 rounded-lg border border-bt-thunder/30 py-2.5 text-sm font-medium text-bt-gray hover:bg-bt-card-hover transition-all"
             >
               キャンセル
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!canAfford || confirming || (selected === 'present' && !toUserId)}
-              className="flex-1 rounded-lg bg-bt-gold py-2.5 text-sm font-bold text-bt-dark disabled:opacity-40 hover:brightness-105"
+              disabled={
+                !canAfford ||
+                confirming ||
+                (selected === 'present' && !toUserId) ||
+                (selected === 'break_thunder' && breakThunderMode === 'schedule' && !scheduledAt)
+              }
+              className="flex-1 rounded-lg bg-bt-thunder py-2.5 text-sm font-bold text-bt-black disabled:opacity-40 hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/40"
             >
-              {confirming ? '処理中...' : '確定する ⚡'}
+              {confirming
+                ? '処理中...'
+                : selected === 'break_thunder' && breakThunderMode === 'now'
+                ? '今すぐ発動する ☕'
+                : '確定する ⚡'}
             </button>
           </div>
         </div>

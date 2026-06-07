@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { updateProfile } from '@/api/auth'
 import { fetchMyPoints, fetchPointHistory } from '@/api/points'
@@ -49,7 +50,8 @@ const REASON_LABEL: Record<string, string> = {
   report_reaction: 'リアクションをもらった',
   invisible_task: '見えない業務を見える化 (AI)',
   present: 'BTプレゼントを送った',
-  bt_time: 'BTtimeを開催',
+  break_thunder: 'Break Thunderを開催',
+  bt_time: 'Break Thunderを開催',
   bt_fever: 'BTfeverを開催',
 }
 
@@ -60,7 +62,8 @@ function formatDate(iso: string) {
 }
 
 export default function MyPage() {
-  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { user, clearAuth } = useAuth()
 
   const [name, setName] = useState(user?.name ?? '山田太郎')
   const [nickname, setNickname] = useState('')
@@ -96,153 +99,209 @@ export default function MyPage() {
     }
   }
 
+  function handleLogout() {
+    clearAuth()
+    navigate('/login', { replace: true })
+  }
+
   const displayName = showNickname && nickname.trim() ? nickname : name
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">マイページ</h1>
+      <h1 className="text-2xl font-bold text-bt-cream">マイページ</h1>
 
       {/* プロフィール設定 */}
-      <section className="rounded-xl bg-white shadow-sm border border-bt-dark/5 overflow-hidden">
-        <div className="px-5 py-4 border-b border-bt-dark/5 bg-bt-dark/[0.02]">
-          <h2 className="font-bold text-bt-dark/70 text-sm uppercase tracking-wide">プロフィール</h2>
-        </div>
-        <form onSubmit={handleProfileSave} className="p-5 space-y-4">
-          <div className="flex items-center gap-4">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-400 text-2xl font-bold text-amber-900">
-              {displayName[0]}
-            </span>
-            <div>
-              <p className="font-bold text-lg">{displayName}</p>
-              <p className="text-xs text-bt-dark/40">
-                {showNickname ? 'ニックネームで表示中' : '本名で表示中'}
-              </p>
+      <section
+        className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+        style={{
+          backgroundImage: 'url(/blackthunder.png)',
+          backgroundSize: '130% 130%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="rounded-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-bt-thunder/20">
+            <h2 className="font-bold text-bt-cream text-sm uppercase tracking-wide">プロフィール</h2>
+          </div>
+          <form onSubmit={handleProfileSave} className="p-5 space-y-4">
+            <div className="flex items-center gap-4">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-bt-thunder text-2xl font-bold text-bt-black">
+                {displayName[0]}
+              </span>
+              <div>
+                <p className="font-bold text-lg text-bt-cream">{displayName}</p>
+                <p className="text-xs text-bt-gray">
+                  {showNickname ? 'ニックネームで表示中' : '本名で表示中'}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label htmlFor="profile-name" className="block text-sm font-medium mb-1">本名</label>
-            <input
-              id="profile-name"
-              aria-label="本名"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-bt-dark/15 px-3 py-2 text-sm outline-none focus:border-bt-gold"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="profile-nickname" className="block text-sm font-medium mb-1">ニックネーム</label>
-            <input
-              id="profile-nickname"
-              aria-label="ニックネーム"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="任意"
-              className="w-full rounded-lg border border-bt-dark/15 px-3 py-2 text-sm outline-none focus:border-bt-gold"
-            />
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border border-bt-dark/10 px-4 py-3">
             <div>
-              <p className="text-sm font-medium">ニックネームで表示する</p>
-              <p className="text-xs text-bt-dark/40 mt-0.5">
-                ONにすると日報やリアクションにニックネームが表示されます
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={showNickname}
-              onClick={() => setShowNickname((v) => !v)}
-              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors
-                ${showNickname ? 'bg-bt-gold' : 'bg-bt-dark/20'}`}
-            >
-              <span
-                className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5
-                  ${showNickname ? 'translate-x-5' : 'translate-x-0.5'}`}
+              <label htmlFor="profile-name" className="block text-sm font-medium mb-1 text-bt-gray">本名</label>
+              <input
+                id="profile-name"
+                aria-label="本名"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream px-3 py-2 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all"
               />
-            </button>
-          </div>
+            </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={profileSaving}
-              className="rounded-lg bg-bt-gold px-5 py-2 text-sm font-bold text-bt-dark disabled:opacity-50 hover:brightness-105 transition-all"
-            >
-              {profileSaving ? '保存中...' : '保存する'}
-            </button>
-            {profileSaved && (
-              <span className="text-sm text-green-600 font-medium">✓ 保存しました</span>
-            )}
-          </div>
-        </form>
+            <div>
+              <label htmlFor="profile-nickname" className="block text-sm font-medium mb-1 text-bt-gray">ニックネーム</label>
+              <input
+                id="profile-nickname"
+                aria-label="ニックネーム"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="任意"
+                className="w-full rounded-lg border border-bt-thunder/30 bg-bt-black/20 text-bt-cream px-3 py-2 text-sm outline-none focus:border-bt-thunder focus:ring-2 focus:ring-bt-thunder/20 transition-all placeholder:text-bt-gray-dark"
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-bt-thunder/30 bg-bt-black/20 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-bt-cream">ニックネームで表示する</p>
+                <p className="text-xs text-bt-gray mt-0.5">
+                  ONにすると日報やリアクションにニックネームが表示されます
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showNickname}
+                onClick={() => setShowNickname((v) => !v)}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors
+                  ${showNickname ? 'bg-bt-thunder' : 'bg-gray-300'}`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5
+                    ${showNickname ? 'translate-x-5' : 'translate-x-0.5'}`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={profileSaving}
+                className="rounded-lg bg-bt-thunder px-5 py-2 text-sm font-bold text-bt-black disabled:opacity-50 hover:bg-bt-gold-bright transition-all shadow-lg shadow-bt-thunder/30"
+              >
+                {profileSaving ? '保存中...' : '保存する'}
+              </button>
+              {profileSaved && (
+                <span className="text-sm text-bt-thunder font-medium">保存しました</span>
+              )}
+            </div>
+          </form>
+        </div>
       </section>
 
       {/* ポイント残高 */}
-      <section className="rounded-xl bg-white p-5 shadow-sm border border-bt-dark/5">
-        <h2 className="font-bold text-bt-dark/70 text-sm uppercase tracking-wide mb-3">ポイント</h2>
-        <div className="flex items-end gap-2">
-          <span className="text-5xl font-bold text-bt-gold">{myPoints}</span>
-          <span className="mb-1 text-lg font-medium text-bt-dark/60">PT</span>
+      <section
+        className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+        style={{
+          backgroundImage: 'url(/blackthunder.png)',
+          backgroundSize: '130% 130%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="rounded-lg p-5">
+          <h2 className="font-bold text-bt-cream text-sm uppercase tracking-wide mb-3">ポイント</h2>
+          <div className="flex items-end gap-2">
+            <span className="text-5xl font-bold text-bt-thunder animate-pulse-thunder">{myPoints}</span>
+            <span className="mb-1 text-lg font-medium text-bt-gray">PT</span>
+          </div>
         </div>
       </section>
 
       {/* ポイント履歴 */}
-      <section className="rounded-xl bg-white p-5 shadow-sm border border-bt-dark/5">
-        <h2 className="font-bold text-bt-dark/70 text-sm uppercase tracking-wide mb-3">
-          ポイント履歴
-        </h2>
-        <ul className="divide-y divide-bt-dark/5">
-          {pointHistory.map((tx) => (
-            <li key={tx.id} className="flex items-center justify-between py-3">
-              <div>
-                <p className="text-sm font-medium">{REASON_LABEL[tx.reason] ?? tx.reason}</p>
-                <p className="text-xs text-bt-dark/40">{formatDate(tx.createdAt)}</p>
-              </div>
-              <span className={`text-base font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {tx.amount > 0 ? `+${tx.amount}` : tx.amount} PT
-              </span>
-            </li>
-          ))}
-        </ul>
+      <section
+        className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+        style={{
+          backgroundImage: 'url(/blackthunder.png)',
+          backgroundSize: '130% 130%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="rounded-lg p-5">
+          <h2 className="font-bold text-bt-cream text-sm uppercase tracking-wide mb-3">
+            ポイント履歴
+          </h2>
+          <ul className="divide-y divide-bt-thunder/20">
+            {pointHistory.map((tx) => (
+              <li key={tx.id} className="flex items-center justify-between py-3">
+                <div>
+                  <p className="text-sm font-medium text-bt-cream">{REASON_LABEL[tx.reason] ?? tx.reason}</p>
+                  <p className="text-xs text-bt-gray">{formatDate(tx.createdAt)}</p>
+                </div>
+                <span className={`text-base font-bold ${tx.amount > 0 ? 'text-bt-thunder' : 'text-red-400'}`}>
+                  {tx.amount > 0 ? `+${tx.amount}` : tx.amount} PT
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       {/* 自分の日報アーカイブ */}
-      <section className="border-t border-bt-dark/10 pt-4">
+      <section className="border-t border-bt-thunder/20 pt-4">
         <button
           onClick={() => setArchiveOpen((v) => !v)}
-          className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-sm font-medium text-bt-dark/60 hover:text-bt-dark transition-colors"
+          className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-sm font-medium text-bt-gray hover:text-bt-thunder transition-colors"
         >
-          <span>📂 自分の日報アーカイブ ({myReports.length} 件)</span>
+          <span>自分の日報アーカイブ ({myReports.length} 件)</span>
           <span className="text-lg">{archiveOpen ? '▲' : '▼'}</span>
         </button>
 
         {archiveOpen && (
           <ul className="mt-3 space-y-3">
             {myReports.map((report) => (
-              <li key={report.id} className="rounded-xl bg-white p-4 shadow-sm border border-bt-dark/5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-bt-dark/50">{formatDate(report.createdAt)}</span>
-                  <span className="text-xs bg-bt-gold/15 text-bt-dark/70 rounded-full px-2 py-0.5">
-                    リアクション {report.reactions.length}件
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed text-bt-dark/80 whitespace-pre-wrap">
-                  {report.content}
-                </p>
-                {report.reactions.length > 0 && (
-                  <div className="mt-2 flex gap-1 flex-wrap">
-                    {report.reactions.map((r) => (
-                      <span key={r.id} className="text-base">{r.emoji}</span>
-                    ))}
+              <li
+                key={report.id}
+                className="rounded-xl shadow-lg shadow-bt-black/50 overflow-hidden p-3 border-4 border-bt-thunder"
+                style={{
+                  backgroundImage: 'url(/blackthunder.png)',
+                  backgroundSize: '130% 130%',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                }}
+              >
+                <div className="rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-bt-gray">{formatDate(report.createdAt)}</span>
+                    <span className="text-xs bg-bt-thunder/20 text-bt-thunder rounded-full px-2 py-0.5">
+                      リアクション {report.reactions.length}件
+                    </span>
                   </div>
-                )}
+                  <p className="text-sm leading-relaxed text-bt-cream whitespace-pre-wrap">
+                    {report.content}
+                  </p>
+                  {report.reactions.length > 0 && (
+                    <div className="mt-2 flex gap-1 flex-wrap">
+                      {report.reactions.map((r) => (
+                        <span key={r.id} className="text-base">{r.emoji}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="border-t border-bt-thunder/20 pt-5">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full rounded-lg border border-red-400/30 bg-red-900/10 px-5 py-3 text-sm font-black text-red-400 transition-colors hover:bg-red-900/20"
+        >
+          ログアウト
+        </button>
       </section>
     </div>
   )

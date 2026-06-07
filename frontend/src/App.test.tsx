@@ -23,7 +23,7 @@ describe('ルーティングの認証ガード', () => {
   it('未ログインで保護ページに来たら /login にリダイレクトされる', () => {
     renderAt('/')
     // ログイン画面が表示される
-    expect(screen.getByText('⚡ BT ログイン')).toBeInTheDocument()
+    expect(screen.getByText('BT ログイン')).toBeInTheDocument()
   })
 
   it('未ログインで /reports に来てもログイン画面になる', () => {
