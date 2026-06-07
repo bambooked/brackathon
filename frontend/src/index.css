@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 :root {
-  font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  --bt-body-font: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  --bt-display-font: 'Arial Black', Impact, 'Hiragino Kaku Gothic Std', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+  font-family: var(--bt-body-font);
 }
 
 body {
@@ -11,6 +13,39 @@ body {
   min-height: 100vh;
   background-color: #111111;
   color: #FFFFFF;
+  font-family: var(--bt-body-font);
+  font-size: 16px;
+}
+
+h1,
+h2,
+button,
+nav a {
+  font-family: var(--bt-display-font);
+}
+
+h1 {
+  font-size: clamp(1.9rem, 4vw, 2.75rem) !important;
+  font-weight: 900 !important;
+  line-height: 1.05;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.65);
+}
+
+h2 {
+  font-weight: 900 !important;
+  line-height: 1.1;
+}
+
+button,
+nav a {
+  font-weight: 900;
+}
+
+label,
+input,
+select,
+textarea {
+  font-size: 1rem;
 }
 
 /* BTfever / BTtime 時のグローバルエフェクト */
@@ -76,13 +111,13 @@ body {
     0% 0%,
     100% 0%,
     42% 18%,
-    100% 18%,
+    100% 17%,
     52% 37%,
-    100% 37%,
+    100% 36%,
     38% 58%,
-    100% 58%,
+    100% 57%,
     56% 78%,
-    100% 78%,
+    100% 77%,
     40% 100%,
     0% 100%,
     0% 0%
@@ -96,6 +131,63 @@ body {
 .bt-zigzag-right {
   right: 0;
   transform: scaleY(-1) scaleX(-1);
+}
+
+/* ref.jpeg の 8x19 グリッド座標を使った左メニュー専用の稲妻背景 */
+.bt-menu-thunder {
+  position: absolute;
+  top: -38px;
+  left: -46px;
+  z-index: 0;
+  width: 245px;
+  height: 580px;
+  pointer-events: none;
+  opacity: 0.95;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.36) 0%, transparent 24%),
+    linear-gradient(180deg, #FFE600 0%, #FFD700 52%, #FFE600 100%);
+  clip-path: polygon(
+    0% 0%,
+    75% 5.26%,
+    100% 57.89%,
+    50% 52.63%,
+    50% 100%,
+    37.5% 100%,
+    12.5% 47.37%,
+    25% 47.37%
+  );
+  filter: drop-shadow(12px 14px 0 rgba(0, 0, 0, 0.55));
+  transform: rotate(-4deg);
+}
+
+.bt-menu-copy {
+  position: absolute;
+  top: 4px;
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  transform: rotate(-4deg);
+  pointer-events: none;
+  opacity: 0.34;
+}
+
+.bt-menu-copy span {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: var(--bt-display-font);
+  font-size: 4.25rem;
+  font-weight: 900;
+  line-height: 0.78;
+  color: #050505;
+  letter-spacing: 0;
+  text-shadow:
+    2px 0 0 rgba(255, 230, 0, 0.7),
+    -2px 0 0 rgba(255, 230, 0, 0.7),
+    0 2px 0 rgba(255, 230, 0, 0.7),
+    0 -2px 0 rgba(255, 230, 0, 0.7),
+    5px 5px 0 rgba(120, 0, 0, 0.48);
 }
 
 /* BTfever/BTtime時のアニメーション */
@@ -134,7 +226,7 @@ body {
   top: 0%;
   left: 50%;
   transform: translateX(-50%);
-  width: 700px;
+  width: 860px;
   height: 100vh;
   pointer-events: none;
   z-index: 1;
@@ -147,15 +239,15 @@ body {
   /* 雷の形状（上から下に向かって太くなる） */
   clip-path: polygon(
 /* --- 左側：上から下へギザギザ降りる --- */
-50% 0%, /* ① 上のスタート（左側） */
+48% 0%, /* ① 上のスタート（左側） */
 
-35% 35%, /* ② 左に大きく折れる */
+28% 35%, /* ② 左に大きく折れる */
 
-45% 35%, /* ③ 少し内側（右）にカクッと戻る */
+43% 34%, /* ③ 少し内側（右）にカクッと戻る */
 
-20% 70%, /* ④ さらに左下に大きく折れる（広がり始める） */
+10% 70%, /* ④ さらに左下に大きく折れる（広がり始める） */
 
-30% 70%, /* ⑤ 少し内側（右）に戻る */
+29% 69%, /* ⑤ 少し内側（右）に戻る */
 
 0% 100%, /* ⑥ 左下の終点（横幅いっぱいの左端！） */
 
@@ -163,20 +255,20 @@ body {
 
 /* === 右辺：下から上へ（下に行くほど右外へグワッと広がる） === */
 
-69% 100%, /* ⑦ 右下の終点（画面の右端へ！） */
+78% 100%, /* ⑦ 右下の終点（画面の右端へ！） */
 
-70% 65%, /* ⑧ 【大外ブースト】右外の限界付近までブースト！ */
+82% 65%, /* ⑧ 【大外ブースト】右外の限界付近までブースト！ */
 
-64% 65%, /* ⑨ 左に深くエグるように戻る（非対称の並行カクカク） */
+62% 64%, /* ⑨ 左に深くエグるように戻る（非対称の並行カクカク） */
 
-65% 30%, /* ⑩ 右にカクッ */
+72% 30%, /* ⑩ 右にカクッ */
 
-60% 30%, /* ⑪ 左にカクッ */
+59% 29%, /* ⑪ 左にカクッ */
 
-55% 15%, /* ⑫ 右にカクッ（頂点の幅はわずか5%！） */
+61% 15%, /* ⑫ 右にカクッ（頂点の幅はわずか5%！） */
 
-50% 15%, /* ⑫ 右にカクッ（頂点の幅はわずか5%！） */
+49% 14%, /* ⑫ 右にカクッ（頂点の幅はわずか5%！） */
 
-52% 0% /* ⑫ 右上のゴール（頂点の幅はわずか7%！） */
+56% 0% /* ⑫ 右上のゴール（頂点の幅はわずか7%！） */
   );
 }
