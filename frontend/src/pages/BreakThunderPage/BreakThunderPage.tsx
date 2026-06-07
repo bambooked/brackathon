@@ -7,6 +7,7 @@ import {
   type BreakThunderActive,
   type BreakThunderMessage,
 } from '@/api/breakThunder'
+import { connectEventStream } from '@/api/events'
 
 const MAX_LENGTH = 240
 
@@ -33,7 +34,7 @@ export default function BreakThunderPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [, setNowTick] = useState(0)
+  const [nowTick, setNowTick] = useState(0)
 
   useEffect(() => {
     fetchBreakThunderMessages()
@@ -50,10 +51,27 @@ export default function BreakThunderPage() {
     return () => clearInterval(timer)
   }, [])
 
+  // SSE購読: Break Thunderが発動されたらアクティブ状態とメッセージを再取得する
+  useEffect(() => {
+    const es = connectEventStream((event) => {
+      if (event.type === 'break_thunder' || event.type === 'bt_time') {
+        fetchBreakThunderMessages()
+          .then((res) => {
+            setActive(res.active)
+            setMessages(res.messages)
+          })
+          .catch(() => {})
+      }
+    })
+    return () => es.close()
+  }, [])
+
   const isExpired = useMemo(() => {
     if (!active.endsAt) return true
     return new Date(active.endsAt).getTime() <= Date.now()
-  }, [active.endsAt])
+  // nowTick を依存に加えることで1秒ごとに再評価し、期限切れを即時反映する
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.endsAt, nowTick])
 
   const canPost = active.active && !isExpired
 
@@ -88,16 +106,28 @@ export default function BreakThunderPage() {
           <h1 className="text-bt-thunder">Break Thunder 掲示板</h1>
           <p className="text-sm text-bt-gray mt-1">Break Thunder 開催中だけ開く15分限定の掲示板です。</p>
         </div>
-        <div className="rounded-xl border-2 border-bt-thunder/30 bg-bt-card p-8 text-center shadow-2xl shadow-bt-thunder/10">
-          <p className="text-5xl mb-4">☕</p>
-          <p className="font-black text-bt-thunder text-lg">いまは掲示板が閉じています</p>
-          <p className="mt-2 text-sm text-bt-gray">BTショップからBreak Thunderを発動すると開きます。</p>
-          <Link
-            to="/shop"
-            className="mt-6 inline-flex rounded-full bg-bt-thunder px-6 py-3 text-sm font-black text-bt-black hover:brightness-110 transition-all"
-          >
-            BTショップへ ⚡
-          </Link>
+        <div
+          className="rounded-xl border-4 border-bt-thunder shadow-2xl shadow-bt-thunder/10 overflow-hidden"
+          style={{
+            backgroundImage: 'url(/blackthunder.png)',
+            backgroundSize: '130% 130%',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="p-3">
+            <div className="rounded-lg overflow-hidden p-8 text-center">
+              <p className="text-5xl mb-4">☕</p>
+              <p className="font-black text-bt-thunder text-lg">いまは掲示板が閉じています</p>
+              <p className="mt-2 text-sm text-bt-gray">BTショップからBreak Thunderを発動すると開きます。</p>
+              <Link
+                to="/shop"
+                className="mt-6 inline-flex rounded-full bg-bt-thunder px-6 py-3 text-sm font-black text-bt-black hover:brightness-110 transition-all"
+              >
+                BTショップへ ⚡
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -116,34 +146,47 @@ export default function BreakThunderPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-xl border-2 border-bt-thunder/40 bg-bt-card p-5 shadow-lg shadow-bt-thunder/10">
-        <label htmlFor="break-thunder-message" className="block text-sm font-black text-bt-gray mb-2">
-          いま何で一息ついてる？
-        </label>
-        <textarea
-          id="break-thunder-message"
-          value={body}
-          onChange={(e) => setBody(e.target.value.slice(0, MAX_LENGTH))}
-          rows={4}
-          placeholder="例: ブラックサンダー食べながらレビュー待ち。15分だけ頭を冷やします。"
-          className="w-full resize-none rounded-lg border border-bt-thunder/20 bg-bt-dark p-3 text-sm text-bt-cream leading-relaxed outline-none focus:border-bt-thunder"
-        />
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <span className="text-xs text-bt-gray">
-            {active.endsAt && `${formatTime(active.endsAt)} まで投稿できます`}
-          </span>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-mono text-bt-gray">{body.length} / {MAX_LENGTH}</span>
-            <button
-              type="submit"
-              disabled={!body.trim() || submitting}
-              className="rounded-full bg-bt-thunder px-5 py-2 text-sm font-black text-bt-black disabled:opacity-40 hover:brightness-110 transition-all"
-            >
-              {submitting ? '投稿中...' : '投稿する ☕'}
-            </button>
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-xl border-4 border-bt-thunder shadow-lg shadow-bt-thunder/20 overflow-hidden"
+        style={{
+          backgroundImage: 'url(/blackthunder.png)',
+          backgroundSize: '130% 130%',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="p-3">
+          <div className="rounded-lg overflow-hidden p-5">
+            <label htmlFor="break-thunder-message" className="block text-sm font-black text-bt-gray mb-2">
+              いま何で一息ついてる？
+            </label>
+            <textarea
+              id="break-thunder-message"
+              value={body}
+              onChange={(e) => setBody(e.target.value.slice(0, MAX_LENGTH))}
+              rows={4}
+              placeholder="例: ブラックサンダー食べながらレビュー待ち。15分だけ頭を冷やします。"
+              className="w-full resize-none rounded-lg border border-bt-thunder/20 bg-bt-dark p-3 text-sm text-bt-cream leading-relaxed outline-none focus:border-bt-thunder"
+            />
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <span className="text-xs text-bt-gray">
+                {active.endsAt && `${formatTime(active.endsAt)} まで投稿できます`}
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono text-bt-gray">{body.length} / {MAX_LENGTH}</span>
+                <button
+                  type="submit"
+                  disabled={!body.trim() || submitting}
+                  className="rounded-full bg-bt-thunder px-5 py-2 text-sm font-black text-bt-black disabled:opacity-40 hover:brightness-110 transition-all"
+                >
+                  {submitting ? '投稿中...' : '投稿する ☕'}
+                </button>
+              </div>
+            </div>
+            {error && <p className="mt-3 rounded-lg bg-red-900/20 border border-red-400/30 px-3 py-2 text-sm text-red-400">{error}</p>}
           </div>
         </div>
-        {error && <p className="mt-3 rounded-lg bg-red-900/20 border border-red-400/30 px-3 py-2 text-sm text-red-400">{error}</p>}
       </form>
 
       <section>
@@ -157,12 +200,25 @@ export default function BreakThunderPage() {
         ) : (
           <ul className="space-y-3">
             {messages.map((message) => (
-              <li key={message.id} className="rounded-xl border border-bt-thunder/20 bg-bt-card p-4 shadow-sm">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <p className="font-black text-bt-cream">{message.userName}</p>
-                  <span className="text-xs text-bt-gray">{formatTime(message.createdAt)}</span>
+              <li
+                key={message.id}
+                className="rounded-xl border-4 border-bt-thunder shadow-lg shadow-bt-black/50 overflow-hidden"
+                style={{
+                  backgroundImage: 'url(/blackthunder.png)',
+                  backgroundSize: '130% 130%',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <div className="p-3">
+                  <div className="rounded-lg overflow-hidden px-5 py-4">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <p className="font-black text-bt-cream">{message.userName}</p>
+                      <span className="text-xs text-bt-gray">{formatTime(message.createdAt)}</span>
+                    </div>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-bt-gray">{message.body}</p>
+                  </div>
                 </div>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-bt-gray">{message.body}</p>
               </li>
             ))}
           </ul>

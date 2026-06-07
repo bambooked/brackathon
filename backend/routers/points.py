@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 import crud.point as point_crud
+import state.break_thunder as bt_state
+import state.sse as sse_state
 from schemas.point import (
     ActiveEventResponse,
     PointHistoryResponse,
@@ -84,7 +86,12 @@ async def trigger_bt_time(current_user: CurrentUser = Depends(get_current_user))
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-    set_event(current_user.team_name, "time")
+    event_data = set_event(current_user.team_name, "time")
+    bt_state.start_session(current_user.team_name)
+    await sse_state.broadcast(
+        current_user.team_name,
+        {"type": "break_thunder", "ends_at": event_data["ends_at"]},
+    )
 
     return TriggerEventResponse(
         message=result["message"],
@@ -92,6 +99,7 @@ async def trigger_bt_time(current_user: CurrentUser = Depends(get_current_user))
         points_consumed=result["points_consumed"],
         transaction=PointTransaction(**result["transaction"]),
         user_balance=result["user_balance"],
+        ends_at=event_data["ends_at"],
     )
 
 
@@ -110,7 +118,11 @@ async def trigger_bt_fever(current_user: CurrentUser = Depends(get_current_user)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-    set_event(current_user.team_name, "fever")
+    event_data = set_event(current_user.team_name, "fever")
+    await sse_state.broadcast(
+        current_user.team_name,
+        {"type": "bt_fever", "ends_at": event_data["ends_at"]},
+    )
 
     return TriggerEventResponse(
         message=result["message"],
@@ -118,6 +130,7 @@ async def trigger_bt_fever(current_user: CurrentUser = Depends(get_current_user)
         points_consumed=result["points_consumed"],
         transaction=PointTransaction(**result["transaction"]),
         user_balance=result["user_balance"],
+        ends_at=event_data["ends_at"],
     )
 
 
