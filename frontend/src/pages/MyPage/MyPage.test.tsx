@@ -8,8 +8,18 @@ import * as reportsApi from '@/api/reports'
 
 import MyPage from './MyPage'
 
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>()
+  return { ...actual, useNavigate: () => mockNavigate }
+})
+
+const mockClearAuth = vi.fn()
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'u-001', name: '山田太郎', teamId: 't-001' } }),
+  useAuth: () => ({
+    user: { id: 'u-001', name: '山田太郎', teamId: 't-001' },
+    clearAuth: mockClearAuth,
+  }),
 }))
 
 vi.mock('@/api/points')
@@ -77,5 +87,12 @@ describe('MyPage', () => {
     expect(screen.queryByText(/Vitestの導入/)).not.toBeInTheDocument()
     fireEvent.click(toggle)
     expect(screen.getByText(/Vitestの導入/)).toBeInTheDocument()
+  })
+
+  it('ログアウトできる', () => {
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+    expect(mockClearAuth).toHaveBeenCalled()
+    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true })
   })
 })

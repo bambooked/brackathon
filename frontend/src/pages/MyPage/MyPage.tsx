@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { updateProfile } from '@/api/auth'
 import { fetchMyPoints, fetchPointHistory } from '@/api/points'
@@ -7,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { PointTransaction, Report } from '@/types'
 
 // フォールバック用サンプルデータ（API 接続前やロード中に表示）
-const SAMPLE_MY_POINTS = 23
+const SAMPLE_MY_POINTS = 3939
 
 const SAMPLE_POINT_HISTORY: PointTransaction[] = [
   { id: 'pt-001', userId: 'u-001', amount: 3, reason: 'invisible_task', createdAt: '2026-06-06T09:50:00+09:00' },
@@ -61,7 +62,8 @@ function formatDate(iso: string) {
 }
 
 export default function MyPage() {
-  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { user, clearAuth } = useAuth()
 
   const [name, setName] = useState(user?.name ?? '山田太郎')
   const [nickname, setNickname] = useState('')
@@ -95,6 +97,11 @@ export default function MyPage() {
     } finally {
       setProfileSaving(false)
     }
+  }
+
+  function handleLogout() {
+    clearAuth()
+    navigate('/login', { replace: true })
   }
 
   const displayName = showNickname && nickname.trim() ? nickname : name
@@ -244,6 +251,16 @@ export default function MyPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="border-t border-bt-dark/10 pt-5">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full rounded-lg border border-red-200 bg-white px-5 py-3 text-sm font-bold text-red-600 shadow-sm transition-colors hover:bg-red-50"
+        >
+          ログアウト
+        </button>
       </section>
     </div>
   )
